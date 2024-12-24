@@ -1,0 +1,9 @@
+nunscommenceincanting:
+  type: world
+  debug: false
+  events: 
+    on donkey added to world:
+    - determine cancelled passively
+    - remove <context.entity>
+    on tick:
+    - execute as_server "minecraft:kill @e[type=donkey]" silent

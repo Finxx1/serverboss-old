@@ -1,0 +1,156 @@
+fieldofmemoriescontrolrightclick:
+  type: world
+  debug: false
+  events:
+    on player right clicks entity:
+    - ratelimit 1t <player>
+    - if <player.has_flag[activemobs]> && <player.flag[activemobs].contains[<context.entity>]>:
+      - if <player.has_flag[controllingcd]>:
+        - stop
+      - if <player.has_flag[controlling]>:
+        - flag <player> controllingstopped
+        - flag <player> controlling:!
+        - wait 1t
+      - define entity <context.entity>
+      - ratelimit <player> 1s
+      - run fieldofmemoriescontrol def:<[entity]>
+    on player dies:
+    - if <player.has_flag[controlling]>:
+      - flag <player> controllingdied
+      - determine cancelled
+    on player left clicks block:
+    - if <player.has_flag[controlling]> && <player.is_sneaking>:
+      - playsound <player> sound:entity_experience_orb_pickup <player.location>
+      - flag <player> controllingstopped
+      - flag <player> controlling:!
+      - wait 1t
+fieldofmemorieskillmobcommand:
+  type: command
+  name: fomkill
+  usage: /fomkill
+  description: manually kills the controlled mob
+  script:
+  - flag <player> controllingdied
+
+fieldofmemoriecontrolsworld:
+  type: world
+  debug: false
+  events:
+    on player starts sprinting:
+    - if <player.has_flag[controlling]>:
+      - determine cancelled
+    on player picks up item:
+    - if <player.has_flag[controlling]>:
+      - determine cancelled
+    on player clicks in inventory:
+    - if <player.has_flag[controlling]>:
+      - determine cancelled
+    on player drops item:
+    - if <player.has_flag[controlling]>:
+      - determine cancelled
+    on player opens inventory:
+    - if <player.has_flag[controlling]>:
+      - determine cancelled
+    on player holds item:
+    - if <player.has_flag[controlling]>:
+      - determine cancelled
+
+fieldofmemoriescontrol:
+  type: task
+  debug: false
+  definitions: entity
+  script:
+  - flag <player> controllingcd expire:2s
+  - flag <player> controlling
+  # backup the stuff
+  - definemap mobstats:
+      mobtype: <[entity].scriptname>
+#      speed: <[entity].speed.mul[0.5]>
+      max_health: <[entity].health_max>
+      #attributes: <[entity].attributes>
+      health: <[entity].health]>
+      potion_effects: <[entity].effects_data>
+      item_in_hand: <[entity].item_in_hand>
+      item_in_offhand: <[entity].item_in_offhand>
+      equipment: <[entity].equipment>
+  - definemap playerstats:
+#      speed: <player.speed>
+      max_health: <player.health_max>
+      #attributes: <player.attributes>
+      health: <player.health>
+      effects_data: <player.effects_data>
+      inventory: <player.inventory.list_contents>
+      equipment: <player.equipment>
+      hunger: <player.food_level>
+      held_slot: <player.held_item_slot>
+  # disguise
+  - define entitytype <[entity].entity_type>
+  - narrate "<&a>YOU'RE: <&c><[entitytype]>"
+  - libsdisguise mob type:<[entitytype]> target:<player> self display_name:<player.nameplate>
+  # apply
+  - mount <player> cancel
+  - inventory clear destination:<player.inventory>
+  - adjust <player> item_slot:1
+#  - adjust <player> speed:<[mobstats.speed]>
+  - adjust <player> max_health:<[mobstats.max_health]>
+  - adjust <player> health:<[mobstats.health]>
+  - adjust <player> remove_effects
+  - adjust <player> potion_effects:<[mobstats.potion_effects]>
+  - adjust <player> item_in_hand:<[mobstats.item_in_hand]>
+  - adjust <player> item_in_offhand:<[mobstats.item_in_offhand]>
+  - adjust <player> equipment:<[mobstats.equipment]>
+  - adjust <player> sprinting:false
+  - adjust <player> food_level:2
+  - if <[entity].is_inside_vehicle>:
+    #- announce itsinvehicle
+    - mount <player>|<[entity].vehicle>
+  #- if <[entity].has_passenger>:
+    #- announce ithaspasenger
+    #- mount <[entity].passenger>|<player>
+  #- announce "<&c>Stats Given"
+  # remove the original mob
+  - remove <[entity]>
+  
+  - wait 1t
+  - if <[entitytype]> == skeleton || <[entitytype]> == pillager:
+    - give arrow quantity:64 slot:9
+  # wait til player "dies" or stops controlling
+  - waituntil <player.has_flag[controllingdied]> || <player.has_flag[controllingstopped]>
+  - if <player.has_flag[controllingdied]>:
+    - flag <player> controllingdied:!
+    - define controllingdied:true
+  - if <player.has_flag[controllingstopped]>:
+    - flag <player> controllingstopped:!
+  
+  # before giving the player their stats back,
+  # note the new stats to give the mob
+  - definemap newmobstats:
+#      speed: <player.speed.mul[1.5]>
+      max_health: <player.health_max>
+      #attributes: <player.attributes>
+      health: <player.health>
+      potion_effects: <player.effects_data>
+      equipment: <player.equipment>
+      item_in_hand: <player.item_in_hand>
+      item_in_offhand: <player.item_in_offhand>
+
+  # now we can give the player their stats back
+  - flag <player> controlling:!
+#  - adjust <player> speed:<[playerstats.speed]>
+  - adjust <player> max_health:<[playerstats.max_health]>
+  - adjust <player> health:<[playerstats.health]>
+  - adjust <player> remove_effects
+  - adjust <player> potion_effects:<[playerstats.effects_data]>
+  - adjust <player> equipment:<[playerstats.equipment]>
+  - adjust <player> food_level:<[playerstats.hunger]>
+  - adjust <player> item_slot:<[playerstats.held_slot]>
+  - inventory set origin:<[playerstats.inventory]> destination:<player.inventory>
+  #- announce "<&a>Stats Returned"
+
+  # stats were returned, now bring the mob back
+  # unless died lol then kill it instantly
+  - libsdisguise remove target:<player>
+  - spawn <player.location> <entity[<[mobstats.mobtype]>].with_map[<[newmobstats]>]> save:controlledmob
+  - if <[controllingdied]||false>:
+    - waituntil <entry[controlledmob].spawned_entity.is_spawned>
+    - kill <entry[controlledmob].spawned_entity>

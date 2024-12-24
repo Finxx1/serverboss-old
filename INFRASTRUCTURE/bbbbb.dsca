@@ -1,0 +1,15 @@
+installmusic:
+  type: world
+  debug: false
+  events:
+    after player joins:
+    - narrate targets:<player> <element[Type /load2 to load the (large file size) OST resourcepack!].color_gradient[from=#FF0000;to=#8000FF;style=HSB]>
+
+load2:
+  type: command
+  debug: false
+  name: load2
+  description: load2
+  usage: /load2
+  script:
+  - resourcepack url:https://www.dropbox.com/scl/fi/1ssn9a2f0lq5q94pwrm1p/BBBB_v5_small.zip?rlkey=v5kk7r7p8o4f0cunswjpnrxcs&dl=1 hash:1337420013374200133742001337420013374200 targets:<player>

@@ -1,0 +1,238 @@
+psiwand:
+  type: item
+  material: stick
+  display name: <element[Psi].color_gradient[from=#FFFFFF;to=#000000]><element[ ]><element[Wand].color_gradient[from=#FFFFFF;to=#000000]>
+  mechanisms:
+    unbreakable: true
+    hides: all
+    custom_model_data: 13374300
+  lore:
+  - <element[I cast PK Bitchkill].color_gradient[from=#808080;to=#000000]>
+  - 
+  - <element[HAUNTED].color[#38F0A8].bold>
+
+psiwandtriggers:
+  type: world
+  debug: false
+  events:
+    on player right clicks block with:psiwand:
+    - determine cancelled passively
+    - if <player.has_flag[psiwandcooldown]>:
+      - stop
+    - flag <player> psiwandcooldown expire:3t
+    - itemcooldown stick duration:3t
+    - if <player.inventory.contains_any[therock]>:
+      - flag <player> psiwandmode:pkbitchkill
+      - title "title:<element[LLLLLLLL⚝].bold.obfuscate.color_gradient[from=#FFFFFF;to=#000000]><element[PK BITCHKILL].bold.color_gradient[from=#FFFFFF;to=#000000]><element[⚝LLLLLLLL].bold.obfuscate.color_gradient[from=#FFFFFF;to=#000000]>" "subtitle:" stay:0t targets:<player> fade_in:0t
+      - playsound at:<player.location> sound:block_stone_button_click_on pitch:0 volume:1
+      - playsound at:<player.location> sound:custom.hand_short pitch:1.02 volume:1 custom
+      - playsound at:<player.location> sound:custom.hand_short pitch:1 volume:1 custom
+      - stop
+    - choose <player.flag[psiwandmode]>:
+      - case hole:
+        - flag <player> psiwandmode:pull
+        - title "title:<element[⚝ PULL ⚝].bold.color[#FFFFFF]>" "subtitle:" stay:1t targets:<player> fade_in:0t
+      - case pull:
+        - flag <player> psiwandmode:push
+        - title "title:<element[⚝ PUSH ⚝].bold.color[#C0C0C0]>" "subtitle:" stay:1t targets:<player> fade_in:0t
+      - case push:
+        - flag <player> psiwandmode:rise
+        - title "title:<element[⚝ RISE ⚝].bold.color[#808080]>" "subtitle:" stay:1t targets:<player> fade_in:0t
+      - case rise:
+        - flag <player> psiwandmode:swap
+        - title "title:<element[⚝ SWAP ⚝].bold.color[#606060]>" "subtitle:" stay:1t targets:<player> fade_in:0t
+      - case swap:
+        - flag <player> psiwandmode:beam
+        - title "title:<element[⚝ BEAM ⚝].bold.color[#404040]>" "subtitle:" stay:1t targets:<player> fade_in:0t
+      - case beam:
+        - flag <player> psiwandmode:hole
+        - title "title:<element[⚝ HOLE ⚝].bold.color[#000000]>" "subtitle:" stay:1t targets:<player> fade_in:0t
+      - default:
+        - flag <player> psiwandmode:pull
+        - title "title:<element[⚝ PULL ⚝].bold.color_gradient[from=#FFFFFF;to=#FFFFFF]>" "subtitle:" stay:0t targets:<player> fade_in:0t
+    - playsound at:<player.location> sound:block_stone_button_click_on pitch:2 volume:1
+    on player damaged by FALL:
+    - if <player.item_in_hand.script.name> == psiwand && <player.flag[psiwandmode]> == rise:
+      - determine cancelled passively
+    on player left clicks block with:psiwand:
+    - determine cancelled passively
+    - if <player.has_flag[psiwandcooldown]>:
+      - stop
+    - choose <player.flag[psiwandmode]>:
+      - case pull:
+        - flag <player> psiwandcooldown expire:1s
+        - itemcooldown stick duration:1s
+        - define aimtarg <player.eye_location.ray_trace[range=50;return=precise;default=air;nonsolids=false;entities=*;ignore=<player>;raysize=0.5]>
+        - define posline <player.eye_location.points_between[<[aimtarg]>].distance[0.75]>
+        - playsound at:<player.eye_location> sound:custom.psychicfire pitch:2 volume:2 custom
+        - define hittarg <[aimtarg].find_entities.within[1].exclude[<player>].get[1]||0>
+        - if <[hittarg]> != 0:
+          - adjust <[hittarg]> velocity:<[hittarg].velocity.mul[0.9].sub[<[hittarg].location.sub[<player.eye_location>].normalize.mul[3].add[0,0.1,0]>]>
+        - foreach <[posline]>:
+          - playeffect effect:redstone special_data:1|<color[#FFFFFF]> offset:0 visibility:100 quantity:1 at:<[value]>
+        - playeffect effect:redstone special_data:2|<color[#FFFFFF]> offset:0 visibility:100 quantity:5 at:<[aimtarg]>
+      - case push:
+        - flag <player> psiwandcooldown expire:1s
+        - itemcooldown stick duration:1s
+        - define aimtarg <player.eye_location.ray_trace[range=50;return=precise;default=air;nonsolids=false;entities=*;ignore=<player>;raysize=0.5]>
+        - define posline <player.eye_location.points_between[<[aimtarg]>].distance[0.75]>
+        - playsound at:<player.eye_location> sound:custom.psychicfire pitch:2 volume:2 custom
+        - define hittarg <[aimtarg].find_entities.within[1].exclude[<player>].get[1]||0>
+        - if <[hittarg]> != 0:
+          - adjust <[hittarg]> velocity:<[hittarg].velocity.mul[0.9].add[<[hittarg].location.sub[<player.eye_location>].normalize.mul[3.5].add[0,0.1,0]>]>
+        - foreach <[posline]>:
+          - playeffect effect:redstone special_data:1|<color[#C0C0C0]> offset:0 visibility:100 quantity:1 at:<[value]>
+        - playeffect effect:redstone special_data:2|<color[#C0C0C0]> offset:0 visibility:100 quantity:5 at:<[aimtarg]>
+      - case rise:
+        - flag <player> psiwandcooldown expire:3s
+        - itemcooldown stick duration:3s
+        - adjust <player> velocity:<player.velocity.add[0,0.25,0]>
+        - adjust <player> gravity:false
+        - playsound at:<player.eye_location> sound:custom.psychicfire pitch:2 volume:2 custom
+        - playeffect effect:redstone special_data:2|<color[#808080]> offset:1 visibility:100 quantity:16 at:<player.eye_location>
+        - wait 30t
+        - adjust <player> gravity:true
+        - playsound at:<player.eye_location> sound:custom.psychichit pitch:2 volume:2 custom
+        - playeffect effect:redstone special_data:2|<color[#808080]> offset:1 visibility:100 quantity:16 at:<player.eye_location>
+      - case swap:
+        - flag <player> psiwandcooldown expire:2s
+        - itemcooldown stick duration:2s
+        - define aimtarg <player.eye_location.ray_trace[range=50;return=precise;default=air;nonsolids=false;entities=*;ignore=<player>;raysize=0.5]>
+        - define posline <player.eye_location.points_between[<[aimtarg]>].distance[0.75]>
+        - define hittarg <[aimtarg].find_entities.within[1].exclude[<player>].get[1]||0>
+        - if <[hittarg]> != 0 && <[hittarg].entity_type> != item_frame:
+          - playsound at:<player.eye_location> sound:custom.psychicfire pitch:1.8 volume:2 custom
+          - playsound at:<player.eye_location> sound:custom.psychichit pitch:0 volume:0.5 custom
+          - define hitloc <[hittarg].location>
+          - teleport <[hittarg]> <player.location>
+          - teleport <player> <[hitloc]>
+          - playeffect effect:redstone special_data:2|<color[#606060]> offset:1 visibility:100 quantity:16 at:<player.eye_location>
+          - playeffect effect:redstone special_data:2|<color[#606060]> offset:1 visibility:100 quantity:16 at:<[hittarg].eye_location>
+          - foreach <[posline]>:
+            - playeffect effect:redstone special_data:2|<color[#606060]> offset:0.05 visibility:100 quantity:2 at:<[value]>
+        - else:
+          - playsound at:<player.eye_location> sound:custom.psychichit pitch:0 volume:2 custom
+          - foreach <[posline]>:
+            - playeffect effect:redstone special_data:0.5|<color[#606060]> offset:0 visibility:100 quantity:1 at:<[value]>
+      - case beam:
+        - flag <player> psiwandcooldown expire:3s
+        - itemcooldown stick duration:3s
+        - define aimtarg <player.eye_location.ray_trace[range=50;return=precise;default=air;nonsolids=false;ignore=*;raysize=0.5]>
+        - define posline <player.eye_location.points_between[<[aimtarg]>].distance[0.75]>
+        - playsound at:<player.eye_location> sound:custom.psychicfire pitch:1.5 volume:2 custom
+        - playsound at:<player.eye_location> sound:custom.psychichit pitch:0.85 volume:1 custom
+        - foreach <[posline]>:
+          - playeffect effect:redstone special_data:1.5|<color[#404040]> offset:0.05 visibility:100 quantity:3 at:<[value]>
+          - define hittarg <[value].find_entities.within[1].exclude[<player>].get[1]||0>
+          - if <[hittarg]> != 0:
+            - hurt <[hittarg]> 5 source:player
+        - define magictrick <player.item_in_offhand.script.name||<player.item_in_offhand.material.name||0>>
+        - if <[magictrick]> != 0: 
+          - choose <[magictrick]>:
+            - case heartscard:
+              - take from:<player.inventory> slot:offhand quantity:1
+              - playsound sound:block_enchantment_table_use pitch:1 at:<player.eye_location> volume:2
+              - repeat 16:
+                - spawn heartbullet[shooter=<player>] <[aimtarg].forward[0.25]>
+            - case diamondscard:
+              - take from:<player.inventory> slot:offhand quantity:1
+              - playsound sound:block_enchantment_table_use pitch:1 at:<player.eye_location> volume:2
+              - repeat 16:
+                - spawn diamondbullet[shooter=<player>] <[aimtarg].forward[0.25]>
+            - case clubscard:
+              - take from:<player.inventory> slot:offhand quantity:1
+              - playsound sound:block_enchantment_table_use pitch:1 at:<player.eye_location> volume:2
+              - repeat 3:
+                - repeat 3:
+                  - spawn clubsbullet[shooter=<player>] <[aimtarg].forward[0.25]>
+                  - wait 3t
+            - case spadescard:
+              - take from:<player.inventory> slot:offhand quantity:1
+              - playsound sound:block_enchantment_table_use pitch:1 at:<player.eye_location> volume:2
+              - repeat 5:
+                - spawn spadebullet[shooter=<player>] <[aimtarg].forward[0.25]>
+                - wait 1t
+            - case jokercard:
+              - playsound sound:custom.jlaugh<list[1|2|3].random> pitch:1 at:<player.eye_location> volume:2 custom
+              - playsound sound:block_enchantment_table_use pitch:1 at:<player.eye_location> volume:2
+              - repeat 24:
+                - spawn diamondbullet[shooter=<player>] <[aimtarg].forward[0.25]>
+                - spawn heartbullet[shooter=<player>] <[aimtarg].forward[0.25]>
+              - repeat 8:
+                - spawn spadebullet[shooter=<player>] <[aimtarg].forward[0.25]>
+                - repeat 3:
+                  - spawn clubsbullet[shooter=<player>] <[aimtarg].forward[0.25]>
+                - wait 2t
+      - case hole:
+        - flag <player> psiwandcooldown expire:20s
+        - itemcooldown stick duration:20s
+#20
+        - define aimtarg <player.eye_location.ray_trace[range=25;return=precise;default=air;nonsolids=false;entities=*;ignore=<player>;raysize=0.5].forward[2]>
+        - define posline <player.eye_location.points_between[<[aimtarg]>].distance[0.5]>
+        - define prenderdist <player.eye_location.distance[<[aimtarg]>].add[5]>
+        - define lookvec <player.eye_location.direction.vector>
+        - foreach <[posline]>:
+          - playeffect effect:redstone special_data:1|<color[#000000]> quantity:1 at:<[value]> offset:0 visibility:<[prenderdist]>
+        #- playsound <player.location> sound:custom.lightning_charge pitch:2 volume:1 custom
+#        - playsound at:<player.eye_location> sound:custom.psychicfire pitch:0 volume:2 custom
+        - playsound <player.location> sound:entity_enderman_stare pitch:0 volume:2
+        - playsound at:<player.eye_location> sound:custom.hand pitch:0 volume:3 custom
+#180
+        - repeat 180:
+          - playeffect effect:redstone special_data:4|<color[#000000]> quantity:60 at:<[aimtarg]> offset:0.25 visibility:100
+          - foreach <[aimtarg].find_entities.within[18].exclude[<player>]>:
+            - adjust <[value]> velocity:<[value].velocity.mul[0.9].add[<[aimtarg].sub[<[value].eye_location>].normalize.div[<[value].eye_location.distance[<[aimtarg]>].power[2].mul[0.5].add[1]>]>]>]>
+            - if <[value].eye_location.distance[<[aimtarg]>]> < 1.5 && <[value].entity_type> != item_frame:
+              - if <[value].health> <= 5:
+                - playsound at:<[aimtarg]> sound:ITEM_BUCKET_FILL pitch:1 volume:9
+                - playsound at:<[aimtarg]> sound:ITEM_BUCKET_FILL pitch:0 volume:9
+                - playsound at:<[aimtarg]> sound:custom.psychichit pitch:0 volume:9 custom
+                - teleport <[value]> <location[0,10,0,bucket2]>
+              - else:
+                - hurt <[value]> 5 source:VOID
+              - if !<[value].is_living>:
+                - playsound at:<[aimtarg]> sound:ITEM_BUCKET_FILL pitch:1 volume:9
+                - playsound at:<[aimtarg]> sound:ITEM_BUCKET_FILL pitch:0 volume:9
+                - playsound at:<[aimtarg]> sound:custom.psychichit pitch:0 volume:9 custom
+                - teleport <[value]> <location[0,10,0,bucket2]>
+          - wait 1t
+        - adjust <server.online_players> stop_sound:minecraft:entity.enderman.stare
+#        - playsound <player.location> sound:block_portal_travel pitch:2 volume:2
+        - foreach <world[bucket2].entities>:
+          - teleport <[value]> <[aimtarg]>
+          - adjust <[value]> velocity:<location[0,0,0].random_offset[0.5]>
+        - explode <[aimtarg]> power:4
+        - playsound at:<[aimtarg]> sound:custom.hand_short pitch:0 volume:3 custom
+        - repeat 64:
+          - define setOff <location[0,0,0].random_offset[3]>
+          - playeffect effect:EXPLODE quantity:1 at:<[aimtarg].add[<[setOff]>]> offset:0 visibility:100 velocity:<[setOff].mul[0.3]>
+        - repeat 128:
+          - define setOff <location[0,0,0].random_offset[3]>
+          - playeffect effect:smoke quantity:1 at:<[aimtarg].sub[<[setOff].mul[2]>]> offset:0 visibility:100 velocity:<[setOff].mul[-0.5]>
+        - playeffect effect:redstone special_data:8|<color[#000000]> quantity:128 at:<[aimtarg]> offset:10 visibility:128
+        - playeffect effect:redstone special_data:8|<color[#000000]> quantity:128 at:<[aimtarg]> offset:2 visibility:128
+        - repeat 4:
+          - playeffect effect:town_aura quantity:128 at:<[aimtarg]> offset:5 visibility:128
+      - case pkbitchkill:
+        - define targets <player.eye_location.find.living_entities.within[15].exclude[<player>].filter_tag[<[filter_value].eye_location.line_of_sight[<player.eye_location>]>]||0>
+        - if !<[targets].is_empty>:
+          - flag <player> psiwandcooldown expire:60s
+          - itemcooldown stick duration:60s
+          - foreach <[targets]>:
+            - playsound at:<[value].eye_location> sound:custom.hand pitch:<element[1].add[<list[<element[-0.02]>|<element[0.02]>].random>].add[<list[<element[-0.01]>|<element[0.01]>].random>].add[<list[<element[-0.02]>|<element[0.02]>].random>].add[<list[<element[-0.01]>|<element[0.01]>].random>]> volume:2 custom
+            - foreach <player.eye_location.points_between[<[value].location.add[0,1,0]>].distance[1]> as:psiparticlespawn:
+              - playeffect at:<[psiparticlespawn]> effect:redstone special_data:2|<color[#000000]> quantity:2 offset:0.05 visibility:128
+            - playeffect effect:redstone special_data:4|<color[#000000]> quantity:128 at:<[value].location.add[0,1,0]> offset:0.35 visibility:128
+            - if !<[value].has_flag[bossmode]> && <[value].health> < 75:
+              - remove <[value]>
+            - else:
+              - hurt <[value]> 75
+        - else:
+          - playsound at:<player.eye_location> sound:custom.reload_error pitch:1.01 volume:2 custom
+          - playsound at:<player.eye_location> sound:custom.reload_error pitch:1 volume:2 custom
+          - flag <player> psiwandcooldown expire:1s
+          - itemcooldown stick duration:1s
+      - default:
+        - flag <player> psiwandcooldown expire:1s
+        - itemcooldown stick duration:1s
+        - title "title:<element[RIGHT CLICK TO SELECT MODE].bold.color_gradient[from=#FFFFFF;to=#000000]>" "subtitle:" stay:0t targets:<player> fade_in:0t

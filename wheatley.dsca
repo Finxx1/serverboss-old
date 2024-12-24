@@ -1,0 +1,6 @@
+wheatley:
+  debug: false
+  type: world
+  events:
+    on script generates error:
+    - determine cancelled

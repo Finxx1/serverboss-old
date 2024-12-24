@@ -1,0 +1,302 @@
+thebucket:
+  type: item
+  material: bucket
+  display name: "<&e>「The Bucket」"
+  lore:
+  - <&f>Jose's stand. Pocket dimension
+
+BucketStop:
+  type: world
+  debug: false
+  events:
+    on player starts sneaking flagged:sucking:
+    - flag <player> Sucking:!
+    on player left clicks flagged:sucking:
+    - flag <player> Sucking:!
+    on player picks up item flagged:sucking:
+    - determine cancelled
+    on player fills thebucket:
+    - determine cancelled
+    on player empties thebucket:
+    - determine cancelled
+    on entity damaged by thorns:
+    - if <context.damager.location.distance[<context.entity.location>]> >= 4.5:
+      - determine cancelled
+
+BucketProjectile:
+  type: world
+  debug: false
+  events:
+    on player picks up item:
+    - if <context.entity.has_flag[bucketprojectile]>:
+      - determine cancelled
+
+Bucketlocked:
+  type: world
+  debug: false
+  events:
+    on player changes world:
+    - if <player.location.world.name> == bucket:
+      - if <player.has_flag[out].not>:
+        - playsound <player.location.above[60]> sound:ENTITY_ZOMBIE_ATTACK_IRON_DOOR pitch:0 volume:5
+        - playsound <player.location.above[60]> sound:BLOCK_ANVIL_PLACE pitch:0 volume:5
+        - determine cancelled
+      - else:
+        - wait 1t
+        - flag <player> out:!
+    on entity teleports:
+    - if <context.entity.location.world.name> == bucket:
+      - if <context.entity.has_flag[out].not> && <context.destination.world.name> != bucket:
+        - flag <context.entity> out:!
+        - playsound <context.entity.location.above[60]> sound:ENTITY_ZOMBIE_ATTACK_IRON_DOOR pitch:0 volume:5
+        - playsound <context.entity.location.above[60]> sound:BLOCK_ANVIL_PLACE pitch:0 volume:5
+        - determine cancelled
+      - if <context.entity.has_flag[out]>:
+        - wait 1t
+        - flag <context.entity> out:!
+    - else:
+      - if <context.destination.world.name> == bucket && <context.entity.location.world.name> != bucket && !<context.entity.has_flag[suckedtp]>:
+        - narrate "<&c>Teleport destination unavailable!"
+        - determine cancelled
+
+BucketFall:
+  type: world
+  debug: false
+  events:
+    # Event for preventing first fall damage
+    on entity damaged by fall:
+    - if <context.entity.has_flag[bucketfall]>:
+      - flag <context.entity> bucketfall:!
+      - if <context.entity.world.name> == bucket:
+        - determine cancelled
+
+# Get entities inside bucket
+# For 1 seconds, start sucking entities in front
+# Check for 1 second cooldown for unnecesary spam
+
+BucketIn:
+  type: world
+  debug: false
+  events:
+    on player right clicks with thebucket:
+    - determine cancelled passively
+    - if <player.location.world.name> == Bucket:
+      - playsound <player.location.above[20]> sound:ENTITY_ZOMBIE_ATTACK_IRON_DOOR pitch:0 volume:5
+      - playsound <player.location.above[20]> sound:BLOCK_ANVIL_PLACE pitch:0 volume:5
+      - stop
+    - if <player.has_flag[sentenced]>:
+      - title "title:<&0><&l><&m>--DENIED--" "subtitle:<&c>You cannot use that in the Box." fade_in:1t stay:1t fade_out:14t
+      - playsound <player.location> sound:BLOCK_NOTE_BLOCK_BASS p:0.6 v:1
+      - playsound <player.location> sound:BLOCK_NOTE_BLOCK_BASS p:1.7 v:1
+      - stop
+    - if !<player.has_flag[Sucking]>:
+      - run locally BucketSuckEffects speed:0
+    on tick every:5:
+    - foreach <server.list_online_players_flagged[Sucking]> as:player:
+      - if <[player].item_in_hand.script.name||null> != TheBucket:
+        - flag <[player]> Sucking:!
+    on player damaged by entity flagged:sucking:
+    - if <context.entity.has_flag[sucked]>:
+      - determine cancelled
+
+
+  BucketSuckEffects:
+  # Effects, start suck and give cooldown/sucking flag
+  - flag <player> Sucking duration:0.5
+  - while <player.has_flag[Sucking]>:
+    - run locally BucketSuckTechnical speed:0
+    - playeffect at:<player.location.above[1.6].forward[1.75]> effect:spell data:0 quantity:2 offset:0.5,0.5,0.5
+    - playeffect at:<player.location.above[1.6].forward[2.15]> effect:spell data:0 quantity:2 offset:0.6,0.6,0.6
+    - playeffect at:<player.location.above[1.6].forward[2.25]> effect:spell data:0 quantity:2 offset:0.7,0.7,0.7
+    - playeffect at:<player.location.above[1.6].forward[2.35]> effect:spell data:0 quantity:2 offset:0.8,0.8,0.8
+    - playsound at:<player.location.above[1.6].forward[1.75]> sound:ITEM_BUCKET_FILL
+    - actionbar "<&6>Entities<&f>/<&2>Projectiles <&e><world[bucket].entities.filter[has_flag[bucketlocked].not].filter[is_projectile.not].size><&f>/<&a><world[bucket].entities.filter[has_flag[bucketlocked].not].filter[is_projectile].size>" targets:<player>
+    - wait 1t
+
+  BucketSuckTechnical:
+  # Define entities within player eye location
+  - if !<player.is_sneaking>:
+    - define entitieswithin <player.eye_location.find.entities.within[18].exclude[<player>].filter[is_projectile]>
+  - else:
+    - define entitieswithin <player.eye_location.find.entities.within[18].exclude[<player>]>
+  # Foreach - Check if the player is facing the entities and define them as sucked
+  # If true, add it to definition entitylist
+  # If false (no available entities), stop script
+  - foreach <[entitieswithin]> as:entity:
+    - if <[entity].gamemode||notplayer> != spectator && <player.location.facing[<[entity]>]> && <[entity].has_flag[sentenced].not>:
+      - define sucked <[sucked].include[<[entity]>]||<list[<[entity]>]||null>>
+  - if <[sucked]||null> == null:
+    - stop
+  - if <player.body_arrows||0> != 0:
+    - adjust <player> body_arrows:<player.body_arrows.sub[1]>
+    - spawn arrow <location[0.5,355,0.5,Bucket]>
+    - playsound <player.location> sound:ITEM_BOTTLE_FILL_DRAGONBREATH
+  # Foreach - Flag entity as sucked. While flagged, get shot towards player until sucked or 1 sec runs out.
+  - foreach <[sucked]> as:entity:
+    - flag <[entity]> sucked duration:6t
+    - flag <[entity]> suckedtp duration:1.5s
+    - while <[entity].has_flag[sucked]> && <[entity].location.distance[<player.location>]> >= 1:
+      - if <[entity].is_projectile>:
+        - if <[entity].location.distance[<player.location>]> <= 2.2:
+          - run locally BucketInside speed:0 def:<[entity]>
+        - else:
+          # suck projectiles
+          - adjust <[entity]> velocity:<[entity].location.face[<player.location>].direction.vector.div[<player.location.distance[<[entity].location>].mul[2]>].add[<[entity].velocity>]>
+      - else:
+        # suck entities
+        - adjust <[entity]> velocity:<[entity].location.face[<player.location>].direction.vector.div[<player.location.distance[<[entity].location>].mul[2]>].add[<[entity].velocity>]>
+        - if <[entity].body_arrows||0> != 0:
+          - adjust <[entity]> body_arrows:<[entity].body_arrows.sub[1]>
+          - spawn arrow <location[0.5,355,0.5,Bucket]>
+      - wait 6t
+      - waituntil <[entity].location.world.name> == bucket || !<[entity].has_flag[sucked]> || <[entity].location.distance[<player.location>]> <= 1.2
+      - if <[entity].location.world.name> == bucket || <[entity].location.distance[<player.location>]> <= 1.2:
+        - run locally BucketInside speed:0 def:<[entity]>
+        - actionbar "<&6>Entities<&f>/<&2>Projectiles <&e><world[bucket].entities.filter[has_flag[bucketlocked].not].filter[is_projectile.not].size><&f>/<&a><world[bucket].entities.filter[has_flag[bucketlocked].not].filter[is_projectile].size>" targets:<player>
+        - stop
+      - if !<[entity].has_flag[sucked]>:
+        - stop
+
+  BucketInside:
+  # Teleport in bucket dimension at spawn chunks and y 333
+  # Flag to prevent first fall damage with event on damaged by fall
+  - define entity <[1]>
+  - playsound <[entity].location> sound:ITEM_BOTTLE_FILL_DRAGONBREATH
+  - flag <[entity]> bucketfall
+  - adjust <[entity]> persistent:true
+  - teleport <[entity]> <location[0.5,250,0.5,Bucket]>
+  - adjust <[entity]> velocity:<location[0,-100,0,Bucket]>
+  - flag <[entity]> sucked:!
+bucketload:
+  type: world
+  debug: false
+  events:
+    after server start:
+    - chunkload add <chunk[0,0,Bucket]>
+    - chunkload add <chunk[1,0,Bucket]>
+    - chunkload add <chunk[-1,0,Bucket]>
+    - chunkload add <chunk[0,1,Bucket]>
+    - chunkload add <chunk[0,-1,Bucket]>
+    - chunkload add <chunk[1,1,Bucket]>
+    - chunkload add <chunk[-1,1],Bucket]>
+    - chunkload add <chunk[1,-1,Bucket]>
+
+BucketOut:
+  type: world
+  debug: true
+  events:
+    on player left clicks with TheBucket:
+    - determine cancelled passively
+    - if <player.location.world.name> == Bucket || <player.has_flag[sentenced]>:
+      - playsound <player.location.above[20]> sound:ENTITY_ZOMBIE_ATTACK_IRON_DOOR pitch:0 volume:5
+      - playsound <player.location.above[20]> sound:BLOCK_ANVIL_PLACE pitch:0 volume:5
+      - stop
+    - if !<player.has_flag[Sucking]>:
+      - run locally BucketOutScript speed:0
+
+  BucketOutScript2:
+  # Check if empty
+  - if <world[bucket].entities.filter[has_flag[bucketlocked].not].is_empty>:
+    - playsound <player> sound:UI_BUTTON_CLICK
+    - actionbar "<&c>No entities in the bucket" targets:<player>
+    - stop
+  # Some particles and sound
+  - repeat 5:
+    - actionbar "<&6>Entities<&f>/<&2>Projectiles <&e><world[bucket].entities.filter[has_flag[bucketlocked].not].filter[is_projectile.not].size><&f>/<&a><world[bucket].entities.filter[has_flag[bucketlocked].not].filter[is_projectile].size>" targets:<player>
+    - playsound <player.location.above[1.6].forward[1.75]> sound:ITEM_BUCKET_EMPTY
+    - playeffect at:<player.location.above[1.6].forward[1.75]> effect:WATER_SPLASH quantity:50 offset:0.3,0.3,0.3
+    - wait 1t
+
+  BucketOutScript:
+  # Check if empty
+  - if <world[bucket].entities.filter[has_flag[bucketlocked].not].is_empty>:
+    - playsound <player> sound:UI_BUTTON_CLICK
+    - actionbar "<&c>No entities in the bucket" targets:<player>
+    - stop
+  # Define random entity to get out
+  - if !<player.is_sneaking>:
+    - if !<world[bucket].entities.filter[has_flag[bucketlocked].not].filter[is_projectile].is_empty>:
+      - define entity <world[bucket].entities.filter[has_flag[bucketlocked].not].filter[is_projectile].random>
+    - else:
+      - stop
+  - else:
+    - define entity <world[bucket].entities.filter[has_flag[bucketlocked].not].random>
+  - run locally BucketOutScript2 speed:0
+  - wait 1t
+  # Teleport and shoot
+  - flag <[entity]> out duration:2s
+  - adjust <[entity]> fall_distance:0
+  - if <[entity].is_projectile>:
+    - adjust <[entity]> shooter:<player>
+    - adjust <[entity]> velocity:<location[0,0,0,<[entity].location.world.name>]>
+    - if <[entity].entity_type> == fireball || <[entity].entity_type> == small_fireball || <[entity].entity_type> == wither_skull:
+      - shoot <[entity].entity_type> origin:<player.eye_location.above[0.6].forward[1.75]> speed:2 shooter:<player>
+      - remove <[entity]>
+    - else:
+      - shoot <[entity]> origin:<player.eye_location.above[0.6].forward[1.75]> speed:2 shooter:<player>
+  - else:
+    - if <[entity].entity_type> != player:
+      - teleport <[entity]> <player.eye_location.forward[1.55].below>
+      - adjust <[entity]> velocity:<player.eye_location.direction.vector.mul[3].with_y[<player.eye_location.direction.vector.y.mul[1.5]>]>
+    - else:
+      - teleport <[entity]> <player.eye_location.forward[1.55].below>
+      - shoot <[entity]> origin:<player.eye_location.forward[1.55].below> speed:1.5
+    - flag <[entity]> shooter:<player>
+    - wait 1t
+    - actionbar "<&6>Entities<&f>/<&2>Projectiles <&e><world[bucket].entities.filter[has_flag[bucketlocked].not].filter[is_projectile.not].size><&f>/<&a><world[bucket].entities.filter[has_flag[bucketlocked].not].filter[is_projectile].size>" targets:<player>
+    - flag <[entity]> bucketprojectile
+    #| Start projectile section |#
+    # Objective:
+    # Try to make damage and hit detection depend on entity size
+    # Pig -> 4 damage
+    - while <[entity].has_flag[bucketprojectile]>:
+      #- narrate gargle targets:<server.match_player[Jose_95]>
+      # Definitions #
+      #D-Velocity
+      - define velocity <[entity].velocity>
+      - define vx <[velocity].x.abs>
+      - define vy <[velocity].y.abs.mul[0.7]>
+      - define vz <[velocity].z.abs>
+      - define v <[vx].add[<[vy]>].add[<[vz]>]||0>
+      #D-Cuboids
+      - define max <[entity].bounding_box.last.round_up>
+      - define min <[entity].bounding_box.first.round_down>
+      - define cuboid <cuboid[<[max]>|<[min]>]>
+      - define cuboidentities <[cuboid].list_entities.filter[entity_type.is[!=].to[dropped_item]].exclude[<player>].exclude[<[entity]>]>
+      - define entities <[cuboidentities]>
+      #D-Size
+      - define max2 <[entity].bounding_box.last>
+      - define min2 <[entity].bounding_box.first>
+      - define size1 <[max2].sub[<[min2]>]>
+      - define sizex <[size1].x>
+      - define sizey <[size1].y>
+      - define sizez <[size1].z>
+      - define size <[sizex].mul[<[sizey]>].mul[<[sizez]>]||0>
+      - define tall <[max2].y.sub[<[min2].y>]||0>
+      - define center <[entity].location.with_y[<[tall]>]>
+      #D-Damage
+      - foreach <[entities]> as:entity2:
+        - if <[entity2].health> < <[entity].health>:
+          - define penalty <[entity2].health>
+      - define damage <[v].mul[1.2].add[<[size].mul[1.7].add[<[entity].health_max.div[4]||0>]>]>
+      - define damageself <[damage].sub[<[penalty].mul[0.5]||0>]>
+      #D-Entities
+      - if <[entities].size||0> > 0:
+        - hurt <[entities]> <[damage]> source:<player>
+        - hurt <[entity]> <[damageself]> source:<player>
+        #- if <[damage]> > <[highestdamage]||0>:
+        #  - define highestdamage <[damage].round>
+        #- title subtitle:<[highestdamage]||<&c>0> targets:<server.list_online_players>  fade_in:0 duration:1s fade_out:0.2
+      # Stop if velocity too low
+      # Velocity to stop: <= 0.1
+      - if <[v]> <= 0.1:
+        - flag <[entity]> bucketprojectile:!
+      # Particles
+      #- playeffect effect:flame at:<[cuboid].outline> offset:0.1,0.1,0.1
+      # Test mech
+      #- adjust <[entity]> gravity:false
+      #- adjust <[entity]> has_ai:false
+      #- adjust <[entity]> custom_name_visible:true
+      #- adjust <[entity]> custom_name:<[tall]>
+      - wait 2t
+      

@@ -1,0 +1,135 @@
+fieldofmemoriessummonchat:
+  type: world
+  debug: false
+  events:
+    on player chats:
+    - if <player.name> != soup__can:
+      - stop
+    - if <context.message> == "FIELD OF MEMORIES" || <context.message> == "fom":
+      - determine cancelled passively
+      - run fieldofmemoriessummonitems
+      - announce "<&gradient[from=black;to=red]>-FIELD OF MEMORIES-"
+      - title targets:<player.location.find_players_within[50]> "subtitle:<&gradient[from=black;to=red]>-FIELD OF MEMORIES-" fade_in:0t fade_out:0.6s stay:0.8s
+      - playsound <player.location.find_players_within[50]> <player.location> volume:1 sound:entity_wither_spawn
+      - playsound <player.location.find_players_within[50]> <player.location> volume:0.5 sound:entity_wither_spawn pitch:0.8
+      - playsound <player.location.find_players_within[50]> <player.location> volume:1 sound:block_enchantment_table_use
+      - wait 1.2s
+      - playsound <player.location.find_players_within[50]> <player.location> volume:0.5 sound:entity_wither_ambient pitch:0.9
+    - if <context.message> == "fomkillall" || <context.message> == "fomk":
+      - determine cancelled passively
+      - kill <player.flag[activemobs]>
+
+fieldofmemoriescharges:
+  type: world
+  debug: false
+  events:
+    on delta time secondly every:5:
+    - if <server.match_player[soup__can].is_spawned||0> != 0:
+      - define player <server.match_player[soup__can]>
+      - flag <[player]> fomcharges:++
+      - if <[player].flag[fomcharges]||0> > 10:
+        - flag <[player]> fomcharges:10
+      - actionbar targets:<[player]> "<&a>CHARGES: <&f><[player].flag[fomcharges]> <&7>| <&c>MOBS: <&f><[player].flag[activemobs].size||0>"
+    on player damaged:
+    - if <context.entity.name> == soup__can && <context.entity.inventory.contains_item[fom*]>:
+      - flag <context.entity> fomcharges:+:<context.damage.div[2]>
+      - if <context.entity.flag[fomcharges]||0> > 10:
+        - flag <context.entity> fomcharges:10
+      - actionbar targets:<context.entity> "<&a>CHARGES: <&f><context.entity.flag[fomcharges]> <&7>| <&c>MOBS: <&f><context.entity.flag[activemobs].size||0>"
+
+
+fieldofmemoriessummonitems:
+  type: task
+  script:
+  - give fomspawnzombiesitem
+  - give fomspawnskeletonitem
+  - give fomspawnpestitem
+  - give fomspawnraiditem
+  - give fomspawnhellitem
+
+fieldofmemoriesitemhandler:
+  type: world
+  debug: false
+  events:
+    on player right clicks block:
+    - if <player.name> != soup__can:
+      - stop
+    - if <player.item_in_hand.script.name.contains_text[fomspawn]>:
+      - determine cancelled passively
+      - ratelimit <player> 6t
+      - run fieldofmemoriesitemuse
+    on player places block:
+    - if <player.item_in_hand.script.name.contains_text[fomspawn]>:
+      - determine cancelled
+
+fieldofmemoriesitemuse:
+  type: task
+  debug: false
+  script:
+  - define item <player.item_in_hand.script.name>
+  - if <player.flag[fomcharges]> < 10 || <player.has_flag[fomcd]>:
+    - playsound <player> sound:block_note_block_bass pitch:0.5 <player.location>
+    - if <player.has_flag[fomcd]>:
+      - actionbar <&e>COOLDOWN
+    - stop
+  - flag <player> fomcharges:-:10
+  - flag <player> fomcd expire:<duration[10s]>
+  - actionbar targets:<player> "<&a>CHARGES: <&f><player.flag[fomcharges]><&7>| <&c>MOBS: <&f><player.flag[activemobs].size||0>"
+  - choose <[item]>:
+    - case fomspawnzombiesitem:
+      - run fomspawnzombies
+      - playsound <player.location> sound:block_grass_break pitch:0.5
+      - playsound <player.location> sound:entity_husk_converted_to_zombie
+    - case fomspawnskeletonitem:
+      - run fomspawnskeleton
+      - playsound <player.location> sound:entity_skeleton_death pitch:0.5
+      - playsound <player.location> sound:entity_skeleton_converted_to_stray
+    - case fomspawnpestitem:
+      - run fomspawnpest
+      - playsound <player.location> sound:entity_vex_hurt pitch:0.5
+      - playsound <player.location> sound:entity_silverfish_ambient
+    - case fomspawnraiditem:
+      - run fomspawnraid
+      - playsound <player.location> sound:event_raid_horn
+      - playsound <player.location> sound:entity_vex_charge
+    - case fomspawnhellitem:
+      - run fomspawnhell
+      - playsound <player.location> sound:entity_zoglin_angry
+      - playsound <player.location> sound:entity_wither_skeleton_hurt
+  - playsound <player.location> sound:entity_elder_guardian_curse volume:0.5
+
+fomspawnzombiesitem:
+  type: item
+  material: green_stained_glass_pane
+  mechanisms:
+    display: <&2>Summon Zombies
+
+fomspawnskeletonitem:
+  type: item
+  material: white_stained_glass_pane
+  mechanisms:
+    display: <&7>Summon Skeletons
+
+fomspawnpestitem:
+  type: item
+  material: purple_stained_glass_pane
+  mechanisms:
+    display: <&5>Summon Pest
+
+fomspawnraiditem:
+  type: item
+  material: red_stained_glass_pane
+  mechanisms:
+    display: <&c>Summon Raid
+
+fomspawnhellitem:
+  type: item
+  material: orange_stained_glass_pane
+  mechanisms:
+    display: <&6>Summon Hell
+
+fomkillall:
+  type: item
+  material: ender_pearl
+  mechanisms:
+    display: <&4>Kill all minions

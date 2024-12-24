@@ -1,0 +1,251 @@
+cyborgzombie:
+  type: entity
+  entity_type: skeleton
+  mechanisms:
+    max_health: 80
+    health: 80
+    equipment: air|air|air|stone_button
+    custom_name_visible: true
+    custom_name: cybord
+
+cyborgzombiehandler:
+  type: world
+  debug: false
+  events:
+    on cyborgzombie spawns:
+    - run cyborgzombiedisguise def:<context.entity>
+    - wait 1t
+    - while <context.entity.is_spawned>:
+      - wait 0.5s
+      - if <context.entity.target||null> != null:
+        - run cyborgzombieattack def:<context.entity>
+    on cyborgzombie dies:
+    - determine no_drops
+    on cyborgzombie shoots bow:
+    - determine cancelled passively
+    #- run cyborgzombieattack def:<context.entity>
+    on cyborgzombie damaged by entity:
+    - if <context.projectile||null> != null:
+      - stop
+    - if <context.entity.is_spawned>:
+      - if <context.entity.has_flag[stationary].not> && <util.random.int[1].to[5]> == 1:
+        - run cyborgzombiedodge def:<context.entity>
+        - determine cancelled
+    on projectile collides with cyborgzombie:
+    - if <context.entity.is_spawned>:
+      - if <context.entity.has_flag[stationary].not> && <util.random.int[1].to[3]> == 1:
+        - run cyborgzombiedodge def:<context.entity>
+        - determine cancelled
+    on cyborgzombie damaged by fall:
+    - determine cancelled
+
+cyborgzombiedodge:
+  type: task
+  debug: false
+  definitions: entity
+  script:
+  - flag <[entity]> stationary expire:1s
+  - adjust <[entity]> velocity:<location[0,0.3,0].random_offset[1,0,1].mul[1.3]>
+  - playeffect at:<[entity].location.above[1.5]> cloud data:0.8 quantity:10
+  - playsound <[entity].location> sound:entity_bat_takeoff volume:1 pitch:0.9
+
+cyborgzombiedisguise:
+  type: task
+  debug: false
+  definitions: entity
+  script:
+  - libsdisguise target:<[entity]> player name:Krzacz3k hide_name
+  - wait 1t
+  - libsdisguise target:<[entity]> player name:Krzacz3k display_name:<[entity].custom_name>
+  - fakeequip <[entity]> hand:air for:<server.online_players>
+
+cyborgzombieattack:
+  type: task
+  debug: false
+  definitions: entity
+  script:
+  - if <[entity].has_flag[cyborgzombiecd]>:
+     - stop
+  - random:
+    - run cyborgzombielasershotgun def:<[entity]>
+    - run cyborgzombiearrowvolley def:<[entity]>
+    - run cyborgzombielaserquick def:<[entity]>
+    - run cyborgzombieleap def:<[entity]>
+
+cyborgzombieleap:
+  type: task
+  debug: false
+  definitions: entity
+  script:
+  - if <[entity].has_flag[stationary]>:
+    - if <[entity].script.name||null> == cyborgzombie:
+      - run cyborgzombieattack def:<[entity]>
+    - stop
+  - flag <[entity]> stationary expire:2s
+  - playsound <[entity].location> sound:entity_bat_takeoff volume:2 pitch:1.2
+  - if <[entity].has_flag[cyborgzombiecd].not> && <util.random.int[1].to[4]> == 4:
+    - run cyborgzombieleapprojectile def:<[entity]>
+  - random:
+    - repeat 1:
+      - adjust <[entity]> velocity:<location[0,0.3,0].random_offset[1,0,1].mul[1.3]>
+    - repeat 1:
+      - adjust <[entity]> velocity:<[entity].location.sub[<[entity].target.location>].normalize.mul[-1.35].add[0,0.35,0]>
+    - repeat 1:
+      - adjust <[entity]> velocity:<[entity].location.sub[<[entity].target.location>].normalize.mul[-1.35].add[0,0.35,0]>
+      - equip <[entity]> hand:air
+      - cast <[entity]> speed amplifier:1 duration:2s
+      - wait 1.5s
+      - equip <[entity]> hand:bow
+
+cyborgzombieleapprojectile:
+  type: task
+  debug: false
+  definitions: entity
+  script:
+  - flag <[entity]> cyborgzombiecd expire:3s
+  - playsound <[entity].location> sound:entity_blaze_shoot volume:2 pitch:1.5
+  - playsound <[entity].location> sound:block_note_block_bit volume:2 pitch:1.5
+  - adjust <[entity]> velocity:<[entity].velocity.mul[1.2].add[0,0.7,0]>
+  - equip <[entity]> hand:air
+  - wait 0.7s
+  - random:
+    - repeat 1:
+      - shoot arrow|arrow|arrow|arrow|arrow|arrow destination:<[entity].target.location> origin:<[entity].location.above[2]> speed:2 spread:3
+    - repeat 1:
+      - shoot fireball destination:<[entity].target.location> origin:<[entity].location.above[4]> speed:2
+    - repeat 1:
+      - look <[entity]> <[entity].target.location> duration:2t
+      - run cyborgzombielaser def:<[entity]>|0.2|8
+  - wait 1.7s
+  - equip <[entity]> hand:bow
+cyborgzombielaserquick:
+  type: task
+  debug: false
+  definitions: entity
+  script:
+  - if <[entity].has_flag[cyborgzombiecd]>:
+    - if <[entity].script.name||null> == cyborgzombie:
+      - run cyborgzombieattack def:<[entity]>
+    - stop
+  - flag <[entity]> cyborgzombiecd expire:1s
+  - playsound <[entity].location> sound:entity_blaze_shoot volume:2 pitch:1.2
+  - wait 5t
+  - playsound <[entity].location> sound:entity_blaze_shoot volume:2 pitch:2
+  - wait 5t
+  - run cyborgzombielaser def:<[entity]>|0.2|8
+
+cyborgzombielasershotgun:
+  type: task
+  debug: false
+  definitions: entity
+  script:
+  - if <[entity].has_flag[lasershotguncd]> || <[entity].has_flag[cyborgzombiecd]>:
+    - if <[entity].script.name||null> == cyborgzombie:
+      - run cyborgzombieattack def:<[entity]>
+    - stop
+  - flag <[entity]> lasershotguncd expire:8s
+  - flag <[entity]> cyborgzombiecd expire:3s
+  - playsound <[entity].location> sound:block_beacon_activate pitch:2
+  - playsound <[entity].location> sound:block_fire_ambient pitch:2
+  - repeat 5:
+    - playsound <[entity].location> sound:block_dispenser_fail pitch:<element[0.8].add[<[value].mul[0.2]>]>
+    - wait 3t
+  - equip <[entity]> hand:air
+  - define speed <[entity].speed>
+  - adjust <[entity]> speed:0
+  - look <[entity]> <[entity].target.location.above[1.5]> duration:17t
+  - wait 11t
+  - repeat 7:
+    - run cyborgzombielaser def:<[entity]>|2.5|3
+  - wait 5t
+  - equip <[entity]> hand:bow
+  - adjust <[entity]> speed:<[speed]>
+
+cyborgzombielaser:
+  type: task
+  debug: false
+  definitions: entity|offset|damage
+  script:
+  - define startloc <[entity].eye_location.left[0.155].below[0.1]>
+  - define locs <[startloc].points_between[<[entity].eye_location.forward[30].random_offset[<[offset]>]>].distance[0.1]>
+  - playeffect effect:redstone at:<[locs]> special_data:0.4|red data:0 offset:0
+  - playsound <[entity].location> sound:block_note_block_bit pitch:0.5
+  - playsound <[entity].location> sound:entity_firework_rocket_blast pitch:1.2
+  - define targets <[startloc].precise_target_list[30].exclude[<[entity]>]>
+  - foreach <[targets]> as:target:
+    - run cyborgzombielaserhit def:<[target]>|<[entity]>|<[damage]>
+  #- foreach <[locs]>:
+  #  - define targets:->:<[value].find_entities.within[0.5].exclude[<[entity]>]>
+  #  - run cyborgzombielaserhit def:<[targets]>|<[entity]>
+  #- foreach <[targets]> as:target:
+  #  - foreach <[locs]> as:loc:
+  #    - if <[target].bounding_box.as[cuboid].include[<[loc]>]>:
+  #      - run cyborgzombielaserhit def:<[target]>|<[entity]>
+cyborgzombielaserhit:
+  type: task
+  debug: false
+  definitions: target|entity|damage
+  script:
+  - adjust <[target]> no_damage_duration:0
+  - hurt <[damage]> <[target]> source:<[entity]>
+  #- burn <[target]> duration:3s
+
+cyborgzombiearrowvolley:
+  type: task
+  debug: false
+  definitions: entity
+  script:
+  - if <[entity].has_flag[arrowvolleycd]> || <[entity].has_flag[cyborgzombiecd]>:
+    - if <[entity].script.name||null> == cyborgzombie:
+      - run cyborgzombieattack def:<[entity]>
+    - stop
+  - flag <[entity]> arrowvolleycd expire:25s
+  - flag <[entity]> cyborgzombiecd expire:10s
+  - flag <[entity]> stationary expire:9s
+  - define speed <[entity].speed>
+  - adjust <[entity]> speed:0
+  - playsound <[entity].location> sound:block_piston_extend volume:2
+  - playsound <[entity].location> sound:item_crossbow_loading_middle volume:2
+  - playsound <[entity].location> sound:item_crossbow_quick_charge_1 volume:2
+  - playsound <[entity].location> sound:item_crossbow_loading_middle volume:2
+  - playsound <[entity].location> sound:item_crossbow_quick_charge_2 volume:2
+  - wait 2s
+  - playsound <[entity].location> sound:item_crossbow_loading_end volume:2
+  - playsound <[entity].location> sound:block_dispenser_fail volume:2 pitch:0
+  - playsound <[entity].location> sound:block_note_block_bit volume:2 pitch:2
+  - wait 2t
+  - playsound <[entity].location> sound:block_note_block_bit volume:2 pitch:2
+  - wait 18t
+  - equip <[entity]> hand:air
+  - repeat 25:
+    - playsound <[entity].location> sound:item_crossbow_loading_end volume:2
+    - if <[entity].entity_type> != player && <[entity].target||null> != null:
+      - look <[entity]> <[entity].target.location.above[1.5]> duration:5t
+    - wait 3t
+    - playsound <[entity].location> sound:entity_firework_rocket_launch volume:2
+    - if !<[entity].is_spawned>:
+      - repeat stop
+    - shoot cyborgarrow origin:<[entity].eye_location> destination:<[entity].eye_location.forward[10]> speed:2.5 shooter:<[entity]>
+  - playsound <[entity].location> sound:block_fire_extinguish pitch:0.5 volume:2
+  - playeffect effect:cloud at:<[entity].location.above> offset:0.7,2,0.7 quantity:20 velocity:0,0.1,0
+  - playeffect effect:cloud at:<[entity].location.above> offset:0.7,2,0.7 quantity:20 velocity:0,0.1,0
+  - wait 1.5s
+  - playsound <[entity].location> sound:block_piston_contract volume:2
+  - adjust <[entity]> speed:<[speed]>
+  - equip <[entity]> hand:bow
+
+cyborgarrow:
+  type: entity
+  entity_type: arrow
+  mechanisms:
+    damage: 1
+
+cyborgarrowworld:
+  type: world
+  debug: false
+  events:
+    on cyborgarrow spawns:
+    - wait 1t
+    - while <context.entity.is_in_block.not>:
+      - wait 1t
+      - playeffect effect:flame at:<context.entity.location> offset:0.2

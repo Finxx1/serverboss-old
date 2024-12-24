@@ -1,0 +1,61 @@
+actionbar:
+  type: world
+  debug: false
+  events:
+    on tick:
+    - foreach <server.online_players>:
+      - choose <[value].flag[actionbarmode]||0>:
+        - case secrets:
+          - actionbar <element[You have unveiled a sneaky secret!].bold.italicize.color_gradient[from=#FFFF00;to=#C08080]> targets:<[value]>
+        - case power:
+          - choose <[value].flag[fnaispowerusage]>:
+            - case 0:
+              - actionbar <element[▌].color[#00E000]> targets:<[value]>
+            - case 1:
+              - actionbar <element[▌▌].color[#00E000]> targets:<[value]>
+            - case 2:
+              - actionbar <element[▌▌].color[#00E000]><element[▌].color[#E0E000]> targets:<[value]>
+            - case 3:
+              - actionbar <element[▌▌].color[#00E000]><element[▌▌].color[#E0E000]> targets:<[value]>
+            - case 4:
+              - actionbar <element[▌▌].color[#00E000]><element[▌▌].color[#E0E000]><element[▌].color[#E00000]> targets:<[value]>
+            - case 5:
+              - actionbar <element[▌▌].color[#00E000]><element[▌▌].color[#E0E000]><element[▌▌].color[#E00000]> targets:<[value]>
+          - title targets:<[value]> title: subtitle:<element[<[value].flag[fnaispower]||100>%].bold.color[#D0D0D0]> fade_in:0 fade_out:5t stay:5t
+        - default:
+          - define barshow <element[]>
+          - if <[value].has_flag[rosetainted]>:
+            - define barshow <[barshow]>A
+          - if <[value].has_flag[infected]>:
+            - define barshow <[barshow]>B
+          - if <[value].has_flag[lagging]>:
+            - define barshow <[barshow]>C
+          - if <[value].has_flag[hamonoverdrive]>:
+            - define barshow <[barshow]>D
+          - if <[value].has_flag[purified]>:
+            - define barshow <[barshow]>E
+          - if <[value].has_flag[jarated]>:
+            - define barshow <[barshow]>G
+          - if <[value].has_flag[gascoated]>:
+            - define barshow <[barshow]>H
+          - if <[value].has_flag[madmilked]>:
+            - define barshow <[barshow]>I
+          - if <[value].has_flag[nitroed]>:
+            - define barshow <[barshow]>J
+          - if <[value].has_flag[mgk_wet]>:
+            - define barshow <[barshow]>K
+          - if <[value].has_flag[acidized]>:
+            - define barshow <[barshow]>L
+          - if <[value].has_flag[oiled]>:
+            - define barshow <[barshow]>M
+          - if <[value].has_flag[allsight]>:
+            - define barshow <[barshow]>N
+          - if <[value].has_flag[electrid]>:
+            - define barshow <[barshow]>Q
+          - if !<[value].gravity>:
+            - define barshow <[barshow]>S
+          - if <[value].invulnerable>:
+            - define barshow <[barshow]>V
+          - if <[value].has_flag[drunk]>:
+            - define barshow <[barshow]>W
+          - actionbar <[barshow].font[awsome:effects]> targets:<[value]>

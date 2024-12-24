@@ -1,0 +1,52 @@
+cmdblocktpdebugthing:
+    debug: false
+    type: world
+    events:
+        on minecraft&coteleport command:
+        - if <context.command_block_location||null> != null:
+            - determine cancelled passively
+            - ratelimit <context.command_block_location> 20s
+            - narrate "<element[Commandblock at <context.command_block_location> ran a teleport].on_hover[<context.raw_args>]>" targets:<server.online_players_flagged[sendtpblocks]>
+        on teleport command:
+        - if <context.command_block_location||null> != null:
+            - determine cancelled passively
+            - ratelimit <context.command_block_location> 20s
+            - narrate "<element[Commandblock at <context.command_block_location> ran a teleport].on_hover[<context.raw_args>]>" targets:<server.online_players_flagged[sendtpblocks]>
+        on tp command:
+        - if <context.command_block_location||null> != null:
+            - determine cancelled passively
+            - ratelimit <context.command_block_location> 20s
+            - narrate "<element[Commandblock at <context.command_block_location> ran a teleport].on_hover[<context.raw_args>]>" targets:<server.online_players_flagged[sendtpblocks]>
+        on minecraft&cotp command:
+        - if <context.command_block_location||null> != null:
+            - determine cancelled passively
+            - ratelimit <context.command_block_location> 20s
+            - narrate "<element[Commandblock at <context.command_block_location> ran a teleport].on_hover[<context.raw_args>]>" targets:<server.online_players_flagged[sendtpblocks]>
+        on minecraft&coexecute command:
+        - if <context.command_block_location||null> != null:
+            - determine cancelled passively
+            - ratelimit <context.command_block_location> 20s
+            - narrate "<element[Commandblock at <context.command_block_location> ran a execute].on_hover[<context.raw_args>]>" targets:<server.online_players_flagged[sendtpblocks]>
+        on execute command:
+        - if <context.command_block_location||null> != null:
+            - determine cancelled passively
+            - ratelimit <context.command_block_location> 20s
+            - narrate "<element[Commandblock at <context.command_block_location> ran a execute].on_hover[<context.raw_args>]>" targets:<server.online_players_flagged[sendtpblocks]>
+
+togglecmdblockfinder:
+    debug: false
+    type: command
+    name: sendtpblocks
+    description: "Toggles a command block teleport debug script"
+    aliases:
+    - findtpcmdblocks
+    usage: /sendtpblocks
+    script:
+    - if <player.has_flag[sendtpblocks]>:
+        - flag player sendtpblocks:!
+        - narrate "<&5>[Denizen] <&d>TP debug is now off for you."
+        - stop
+    - if <player.has_flag[sendtpblocks].not>:
+        - flag player sendtpblocks
+        - narrate "<&5>[Denizen] <&d>TP debug is now on for you."
+        - stop

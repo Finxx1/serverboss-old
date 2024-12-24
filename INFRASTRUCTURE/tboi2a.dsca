@@ -1,0 +1,84 @@
+boi_roomentry:
+  type: world
+  events:
+    on player enters room_*:
+        - if <player.gamemode> == SPECTATOR:
+            - stop
+        - if <player.gamemode> == CREATIVE:
+            - narrate "entered <context.area.note_name>"
+            - narrate "you're in creative, edit this area with <&e>/boiroommobs"
+            - stop
+        - narrate "entered <context.area.note_name>"
+        - if !<context.area.has_flag[mobs]>:
+            - narrate "<&7>this room is not set up to have mobs, not doing anything."
+            - stop
+        - if <player.has_flag[boi_enteredrooms]>:
+            - if !<player.flag[boi_enteredrooms].contains[<context.area.note_name>]||false>:
+                - foreach <context.area.blocks[*_door]> as:door:
+                    - if <[door].material.half> == BOTTOM:
+                        - switch <[door]> off
+                        - playsound <[door]> sound:block_iron_door_close
+                - foreach <context.area.flag[mobs]> as:amob:
+                    - spawn <[amob]> <context.area.spawnable_blocks.random.center>
+                - flag <player> boi_enteredrooms:->:<context.area.note_name>
+            - else:
+                - narrate "<&a>visited already, not closing doors"
+                - stop
+        - else:
+            - foreach <context.area.flag[mobs]> as:amob:
+                - spawn <[amob]> <context.area.spawnable_blocks.random.center>
+            - foreach <context.area.expand[1].blocks[*_door]> as:door:
+                - if <[door].material.half> == BOTTOM:
+                    - switch <[door]> off
+            - flag <player> boi_enteredrooms:->:<context.area.note_name>
+    on !player dies in:room_*:
+        - foreach <context.entity.location.cuboids[room_*]>:
+            - foreach <[value].living_entities.filter_tag[<[filter_value].is_mob>]> as:mob:
+                - if <[mob].health> > 0:
+                    #- announce <[value].living_entities.filter_tag[<[filter_value].is_mob>].filter_tag[<[filter_value].health.is[more].than[0]>]>
+                    - stop
+            - foreach <[value].expand[1].blocks[*_door]> as:door:
+                - if <[door].material.half> == BOTTOM:
+                    - switch <[door]> on
+                    - playsound <[door]> sound:block_iron_door_open
+
+boi_roommarker:
+    debug: false
+    type: command
+    name: boiroommobs
+    description: it does a thing
+    tab completions:
+        1: show|add|remove
+        2: <server.entity_types>
+    usage: /boiroommobs
+    script:
+    - if <player.location.cuboids[room_*].size> != 1:
+        - narrate "You're not standing in a valid location!<&nl>Expected 1 cuboid, found <player.location.cuboids[room_*].size>"
+        - stop
+    - else:
+        - if <context.args.get[1]> == show:
+            - narrate <player.location.cuboids[room_*].get[1].flag[mobs]||nothing>
+            - stop
+        - if <context.args.size> != 2:
+            - narrate "Invalid number of arguments (needs 2)"
+            - stop
+        - if <context.args.get[1]> == add:
+            - flag <player.location.cuboids[room_*].get[1]> mobs:->:<context.args.get[2]>
+            - narrate ok
+            - narrate <player.location.cuboids[room_*].get[1].flag[mobs]||nothing>
+        - if <context.args.get[1]> == remove:
+            - flag <player.location.cuboids[room_*].get[1]> mobs:<-:<context.args.get[2]>
+            - narrate ok
+            - if <player.location.cuboids[room_*].get[1].flag[mobs].size> <= 0:
+                - flag <player.location.cuboids[room_*].get[1]> mobs:!
+            - narrate <player.location.cuboids[room_*].get[1].flag[mobs]||nothing>
+
+boi_progressclear:
+    debug: false
+    type: command
+    name: boiclearprogress
+    description: it does a thing
+    usage: /boiclearprogress
+    script:
+        - flag <player> boi_enteredrooms:!
+        - narrate "cleared all visited rooms flag"

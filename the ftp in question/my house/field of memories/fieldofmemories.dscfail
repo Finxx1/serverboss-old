@@ -1,0 +1,186 @@
+fomspawnzombies:
+  type: task
+  script:
+  - spawn fomzombie <player.location.right[1]>
+  - spawn fomzombie <player.location.right[1].forward_flat[-1]>
+  - spawn fomzombie <player.location.right[-1]>
+  - spawn fomzombie <player.location.right[-1].forward_flat[-1]>
+  - spawn fomhusk <player.location.forward_flat[1]>
+  - spawn fomzombie <player.location.forward_flat[-1]>
+
+fomspawnskeleton:
+  type: task
+  script:
+  - spawn fomskeleton <player.location.right[1]>
+  - spawn fomskeleton <player.location.right[-1]>
+  - spawn <entity[fomspiderjockey].with[passenger=fomskeleton]> <player.location.forward_flat[1]>
+  - spawn fomskeleton <player.location.forward_flat[-1]>
+
+fomspawnpest:
+  type: task
+  script:
+  - repeat 3:
+    - spawn fomsilverfish <player.location.right[1].random_offset[1,0,1]>
+    - spawn fomsilverfish <player.location.right[-1].random_offset[1,0,1]>
+    - spawn fomsilverfish <player.location.forward_flat[-1].random_offset[1,0,1]>
+  - spawn fomwitch <player.location.forward_flat[1]>
+
+fomspawnhell:
+  type: task
+  script:
+  - spawn fomwitherskeleton <player.location.right[1]>
+  - spawn fomwitherskeleton <player.location.right[-1]>
+  - spawn <entity[fomzoglin].with[passenger=fomwitherskeleton]> <player.location.forward_flat[1]>
+
+fomspawnraid:
+  type: task
+  script:
+  - spawn fompillager <player.location.right[1]>
+  - spawn fompillager <player.location.right[2]>
+  - spawn fompillager <player.location.right[-1]>
+  - spawn fompillager <player.location.right[-2]>
+  - spawn fompillager <player.location.forward_flat>
+
+fompillager:
+  type: entity
+  entity_type: pillager
+
+fomzoglin:
+  type: entity
+  entity_type: zoglin
+  mechanisms:
+    max_health: 10
+    #passenger: fomwitherskeleton
+
+fomwitherskeleton:
+  type: entity
+  entity_type: wither_skeleton
+  mechanisms:
+    max_health: 10
+    equipment: air|air|air|iron_helmet
+
+fomzombie:
+  type: entity
+  entity_type: zombie
+  mechanisms:
+    age: adult
+    max_health: 10
+    equipment: air|air|air|iron_helmet
+    speed: 0.28
+
+fomwitch:
+  type: entity
+  entity_type: witch
+  mechanisms:
+    max_health: 14
+
+fomhusk:
+  type: entity
+  entity_type: husk
+  mechanisms:
+    age: adult
+    max_health: 12
+    equipment: air|air|iron_chestplate|iron_helmet
+    item_in_hand: iron_sword
+    speed: 0.28
+
+fomskeleton:
+  type: entity
+  entity_type: skeleton
+  mechanisms:
+    max_health: 10
+    equipment: air|air|air|iron_helmet
+    speed: 0.28
+
+fomsilverfish:
+  type: entity
+  entity_type: silverfish
+  mechanisms:
+    speed: 0.35
+
+fomspiderjockey:
+  type: entity
+  entity_type: spider
+  mechanisms:
+    #passenger: fomskeleton
+    speed: 0.28
+    max_health: 10
+
+fomsavemobstoflag:
+  type: world
+  debug: false
+  events:
+    on entity spawns:
+    - if <context.entity.script.name.contains_all_text[fom]||false>:
+       - run fomsavemobstoflagtask def:<context.entity>
+
+fomsavemobstoflagtask:
+  type: task
+  debug: false
+  definitions: mob
+  script:
+  - define user <[mob].location.find_players_within[30].filter[flag[fieldofmemories]].first>
+  - if <[user]||fail> == fail:
+    - stop
+  - flag <[user]> activemobs:->:<[mob]>
+  - flag <[mob]> user:<[user]>
+  - wait 1t
+  - waituntil <[mob].is_spawned.not>
+  - if <[user].is_spawned>:
+    - playsound <[user]> <[user].location> sound:entity_blaze_hurt
+  - flag <[user]> activemobs:<-:<[mob]>
+
+fomtargetworld:
+  type: world
+  debug: false
+  events:
+    on entity damages entity:
+    - if <context.entity.flag[fieldofmemories]||false>:
+      - run fomtargettask def:<context.damager>|<context.entity>
+    - if <context.damager.flag[fieldofmemories]||false>:
+      - run fomtargettask def:<context.entity>|<context.damager>
+    - if <context.damager.script.name.contains_any_text[fom]||false>:
+      - if <context.entity.script.name.contains_any_text[fom]||false>:
+        - determine cancelled
+    on entity targets entity:
+    - if <context.entity.script.name.contains_any_text[fom]||false>:
+      - if <context.target.script.name.contains_any_text[fom]||false>:
+        - determine cancelled passively
+        - if <context.entity.flag[user].flag[fomtarget]||fail> != fail:
+          - attack <context.entity> target:<context.entity.flag[user].flag[fomtarget]>
+        - else:
+          - wait 1t
+          - attack <context.entity> cancel
+      - if <context.target.flag[fieldofmemories]||false>:
+        - determine cancelled
+    on player left clicks block:
+    - if <player.flag[fieldofmemories]||false>:
+      - if <player.target||null> != null:
+        - run fomtargettask def:<player.target>|<player>
+    on entity killed by entity:
+    - if <context.damager.script.name.contains_any_text[fom]||false>:
+      - if <context.entity> == <context.damager.flag[user].flag[fomtarget]>:
+        - wait 1t
+        - attack <context.damager.flag[user].flag[activemobs]> cancel
+    on projectile collides with entity:
+    - if <context.projectile.shooter.script.name.contains_any_text[fom]> && <context.entity.script.name.contains_any_text[fom]>:
+      - determine cancelled
+
+fomtargettask:
+  type: task
+  definitions: target|user
+  script:
+  - ratelimit <[target]> 1t
+  - if <[target].is_living.not>:
+    - stop
+  - if <[target].script.name.contains_any_text[fom]||false>:
+    - stop
+  - wait 1t
+  - if <[target].is_spawned.not||true>:
+    - stop
+  - flag <[user]> fomtarget:<[target]> expire:1m
+  - define target <[user].flag[fomtarget]>
+  - define fomentities <[user].flag[activemobs]||epicfail>
+  - if <[fomentities].is_empty.not||false>:
+    - attack <[fomentities]> target:<[target]>
+    #- announce "<&c><[target].name> <&e>was targetted by <&6><[fomentities].size> mobs"

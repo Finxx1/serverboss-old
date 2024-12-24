@@ -1,0 +1,53 @@
+stylemeter:
+  type: world
+  debug: false
+  events:
+    on delta time secondly every:1:
+    - foreach <server.online_players>:
+      - if <[value].has_flag[stylestatus]> && <[value].flag[stylestatus]> > 0:
+        - if <[value].flag[stylestatus]> > 1000:
+          - define stylestatusdisplay:<element[WACKO!!!].color[#FF20FF].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 900:
+          - define stylestatusdisplay:<element[SSSHITSTORM].color[#FF1010].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 800:
+          - define stylestatusdisplay:<element[SSADISTIC].color[#D80000].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 700:
+          - define stylestatusdisplay:<element[SUPREME].color[#C00000].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 600:
+          - define stylestatusdisplay:<element[ANARCHIC].color[#C06000].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 500:
+          - define stylestatusdisplay:<element[BRUTAL].color[#C0C000].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 400:
+          - define stylestatusdisplay:<element[CHAOTIC].color[#00C000].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 300:
+          - define stylestatusdisplay:<element[DESTRUCTIVE].color[#00C0C0].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 200:
+          - define stylestatusdisplay:<element[EFFICIENT].color[#0060C0].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 100:
+          - define stylestatusdisplay:<element[FANTASTIC].color[#0000DD].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 0:
+          - define stylestatusdisplay:<element[GRINDING].color[#808080].bold.italicize>
+        #- if <[value].has_flag[styleinfo]>:
+        - sidebar set "title:<[stylestatusdisplay]>" "values:<[value].flag[styleinfo]>" players:<[value]> scores:<[value].flag[styleinfotwo]>
+        #- else:
+        #  - sidebar set "title:<[stylestatusdisplay]>" "values:<element[guug]>" players:<[value]>
+        - if <[value].flag[stylestatus]> > 16:
+          - flag <[value]> stylestatus:<[value].flag[stylestatus].sub[16]>
+        - else:
+          - flag <[value]> stylestatus:0
+      - else:
+        - sidebar remove players:<[value]>
+    on delta time secondly every:2:
+    - foreach <server.online_players>:
+      - flag <[value]> styleinfo:<[value].flag[styleinfo].remove[1]>
+      - flag <[value]> styleinfotwo:<[value].flag[styleinfotwo].remove[1]>
+
+addstyle:
+  type: task
+  debug: false
+  definitions: stylename|amount|playa
+  script:
+  - flag <[playa]> stylestatus:<[playa].flag[stylestatus].add[<[amount]>]>
+  - flag <[playa]> styleinfo:<list[<[playa].flag[styleinfo]>|<element[+ ].italicize><[stylename]>].combine>
+  - flag <[playa]> styleinfotwo:<list[<[playa].flag[styleinfotwo]>|<[amount]>].combine>
+  - announce <[playa].flag[styleinfotwo]>

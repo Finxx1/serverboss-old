@@ -1,0 +1,96 @@
+#openirondoors:
+#  type: world
+#  debug: false
+#  events:
+#    on player walks in:serverboss:
+#    # ratelimit to once every tick, as well as checking if were already busy with a door script
+#    - ratelimit <player> 1t
+#    - if <player.has_flag[busyopeningdoor]>:
+#      - stop
+#    # check if the players near an iron door, a CLOSED one
+#    - if <player.location.find_blocks[iron_door].within[3].filter[switched.not].is_empty.not>:
+#      # check if the player has a flag that means theres still mobs nearby
+#      - if <player.has_flag[mobsarealive]>:
+#        - actionbar "<&c>There are still mobs alive, kill them all before proceeding."
+#        - stop
+#      # else open for a bit
+#      - else:
+#        # players busy dont run this script more
+#        - flag <player> busyopeningdoor
+#
+#        - while <player.location.find_blocks[iron_door].within[3].filter[switched.not]>
+#        - switch <player.location.find_blocks[iron_door].within[3].filter[switched.not]> duration:1s state:on
+#        - actionbar "<&a>Door has been opened."
+
+openirondoorsworld:
+  type: world
+  debug: false
+  events:
+    on tick every:5:
+    - foreach <server.players.filter[world.name.is[==].to[serverboss]]> as:player:
+      - run openirondoorplayer player:<[player]>
+
+openirondoorplayer:
+  type: task
+  debug: false
+  script:
+  - ratelimit <player> 1t
+  - if <player.location.find_blocks[iron_door].within[2.2].filter[switched.not].filter[material.half.is[==].to[top]].is_empty.not>:
+    #theres a door open if we get here
+    #- narrate "<&a>THERES A CLOSED DOOR"
+    - foreach <player.location.find_blocks[iron_door].within[2.2].filter[switched.not].filter[material.half.is[==].to[top]]> as:door:
+      - run openirondoordoor def:<[door]>
+
+openirondoordoor:
+  type: task
+  debug: false
+  definitions: door
+  script:
+  - if <player.has_flag[mobsarestillalive]>:
+    - if <player.location.distance[<[door].with_y[<player.location.y>]>]> < 1.2:
+      - ratelimit <player> 1s
+      - playsound sound:entity_zombie_attack_iron_door <player>
+      - title <player> subtitle:<&c>⚠<&e>⚠<&c>⚠ fade_in:0t stay:6t fade_out:0t
+      - wait 7t
+      - playsound sound:block_note_block_bass pitch:0.8 <player>
+      - title <player> subtitle:<&c>⚠<&e>⚠<&c>⚠ fade_in:0t stay:1t fade_out:0t
+      - wait 2t
+      - playsound sound:block_note_block_bass pitch:0.8 <player>
+      - title <player> subtitle:<&c>⚠<&e>⚠<&c>⚠ fade_in:0t stay:0.5s fade_out:0.3s
+    - stop
+  - switch <[door]> state:on
+  - playsound sound:block_iron_door_open <[door]>
+  - wait 1t
+  - waituntil <[door].find.players.within[2].is_empty> || <[door].material.name> != iron_door || <player.has_flag[mobsarestillalive]>
+  - if <player.has_flag[mobsarestillalive]>:
+    - run openirondoordoortp def:<[door]>
+  - if <[door].material.name> == iron_door:
+    - switch <[door]> state:off
+    - playsound sound:block_iron_door_close <[door]>
+    #- narrate <&e>closed
+
+openirondoordoortp:
+  type: task
+  debug: false
+  definitions: door
+  script:
+  - ratelimit <player> 1t
+  - playsound sound:entity_enderman_teleport <player>
+  - choose <[door].material.direction>:
+    - case north:
+      - teleport <player> <[door].add[0,-1,-1.5].with_yaw[<player.location.yaw>].with_pitch[<player.location.pitch>]>
+    - case south:
+      - teleport <player> <[door].add[0,-1,1.5].with_yaw[<player.location.yaw>].with_pitch[<player.location.pitch>]>
+    - case west:
+      - teleport <player> <[door].add[-1.5,-1,0].with_yaw[<player.location.yaw>].with_pitch[<player.location.pitch>]>
+    - case east:
+      - teleport <player> <[door].add[1.5,-1,0].with_yaw[<player.location.yaw>].with_pitch[<player.location.pitch>]>
+
+mobsarestillalive:
+  type: world
+  debug: false
+  events:
+    on delta time secondly:
+    - foreach <server.players.filter[location.world.name.is[==].to[serverboss]]>:
+      - if <[value].location.find_entities.within[100].filter[target.is[==].to[<[value]>]].filter[is_player.not].is_empty.not>:
+        - flag <[value]> mobsarestillalive expire:<duration[1.1s]>

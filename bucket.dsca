@@ -1,0 +1,105 @@
+thebucket:
+  type: item
+  material: bucket
+  display name: "<&d>「The Bucket」"
+  lore:
+  - <&e>⚠⚠⚠⚠⚠⚠⚠
+
+buckethandlerrightclick:
+  type: world
+  debug: false
+  events:
+    on player right clicks block with:thebucket:
+    # no bucket in bucket
+    - if <player.location.world.name> == bucket:
+      - run nobucket
+      - stop
+    #- playsound sound:item_bucket_fill <player>
+    ## simple teleports
+    #- teleport <context.entity> <location[0.5,100,0.5,bucket]>
+    # suck shit
+    - run bucketsucking
+
+buckethandlernospawnnodespawn:
+  type: world
+  debug: false
+  events:
+    on entity spawns in:bucket:
+    - if <context.reason> == natural:
+      - determine cancelled
+    on entity despawns in:bucket:
+    - determine cancelled
+    on chunk unloads in:bucket:
+    - if !<context.chunk.entities.is_empty>:
+      - determine cancelled
+    on entity damaged by FALL in:bucket:
+    - determine cancelled
+
+nobucket:
+  type: task
+  debug: false
+  script:
+  - narrate "<&4><&l><&k>ÇÇÇÇ<&4><&l>REALITY COMPROMISED<&k>ÇÇÇÇ"
+  - title <player> "title:<&4><&l><&k>ÇÇÇÇ<&4><&l>REALITY COMPROMISED<&k>ÇÇÇÇ" subtitle:<&4><&k><&l>^^^^^^^^^^^^^^^^^^^^^^^^^^^^ fade_in:0t fade_out:0t stay:60t
+  - take item:thebucket quantity:400
+  - adjust <player> vision:creeper
+  - wait 3t
+  - repeat 40:
+    - adjust <player> vision
+    - repeat 5:
+      - playsound sound:block_glass_break <player> pitch:<util.random.decimal[0].to[2]>
+      - playsound sound:block_glass_break <player> pitch:0
+    - teleport <player> <player.location.add[<util.random.int[-10].to[10]>,0,<util.random.int[-10].to[10]>].with_yaw[<util.random.decimal[-360].to[360]>].with_pitch[<util.random.decimal[-90].to[90]>]>
+    - repeat 12:
+      - playeffect at:<player.location.add[<util.random.int[-4].to[4]>,<util.random.int[-4].to[4]>,<util.random.int[-4].to[4]>]> effect:barrier targets:<player> quantity:10 offset:2,2,2
+    - wait 1t
+    - if <util.random.int[1].to[10]> == 1:
+      - adjust <player> vision:creeper
+  - adjust <player> vision
+  - title <player> fade_in:0t fade_out:0t stay:0t "title: "
+  - teleport <player> <player.location.with_world[Superflat]>
+
+bucketsucking:
+  type: task
+  debug: false
+  script:
+  - run bucketsuckingsound
+  - run bucketsuckingparticles
+  # who unfortunate
+  - define unfortunate <player.location.find_entities.within[7]>
+  # check if close and teleport
+  - foreach <[unfortunate]>:
+    - if <player.location.face[<[value.location]>]>:
+      - run bucketsucked def:<[value]>
+      - announce me
+
+bucketsucked:
+  type: task
+  debug: false
+  script:
+  - playsound sound:item_bucket_fill <player>
+  - teleport <[1]> <location[0.5,100,0.5,bucket]>
+
+bucketsuckingsound:
+  type: task
+  debug: false
+  script:
+  - repeat 3:
+    - playsound sound:item_bucket_fill <player.location>
+    - playsound sound:item_bucket_fill pitch:2 <player.location>
+    - playsound sound:entity_iron_golem_attack pitch:0 <player.location>
+    - wait 1t
+
+bucketsuckingparticles:
+  type: task
+  debug: false
+  script:
+  - playeffect effect:cloud velocity:<player.eye_location.forward.sub[<player.eye_location>].mul[-1.1]> at:<player.eye_location.forward[7]> quantity:5 offset:1.25,1.25,1.25
+  - playeffect effect:cloud velocity:<player.eye_location.forward.sub[<player.eye_location>].mul[-1.0]> at:<player.eye_location.forward[6]> quantity:5 offset:1.25,1.25,1.25
+  - playeffect effect:cloud velocity:<player.eye_location.forward.sub[<player.eye_location>].mul[-0.9]> at:<player.eye_location.forward[5]> quantity:5 offset:1.25,1.25,1.25
+  - playeffect effect:cloud velocity:<player.eye_location.forward.sub[<player.eye_location>].mul[-0.8]> at:<player.eye_location.forward[4]> quantity:5 offset:1.25,1.25,1.25
+  - playeffect effect:cloud velocity:<player.eye_location.forward.sub[<player.eye_location>].mul[-0.7]> at:<player.eye_location.forward[3]> quantity:5 offset:1.25,1.25,1.25
+
+
+
+

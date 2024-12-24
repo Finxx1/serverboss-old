@@ -1,0 +1,127 @@
+THEHAND:
+  type: item
+  display name: <&5>「<&f><&l>The<&b><&l> Hand<&5>」
+  material: light_blue_concrete
+  enchantments:
+  - damage_all:32767
+  mechanisms:
+    hides:
+    - ALL
+
+TheHandWorld:
+  type: world
+  debug: false
+  events:
+    on player damages entity priority:-1:
+      - if <context.cause> == entity_attack && <player.item_in_hand.script.name||null> == THEHAND && <context.entity.has_flag[ded].not>:
+        - determine cancelled passively
+    on player right clicks block with:THEHAND:
+      - if <context.click_type> == PHYSICAL:
+        - stop
+      - determine cancelled passively
+      - define tpmode yes
+      - run TheHandScript def:<[tpmode]>
+    on player left clicks block with:THEHAND:
+      - if <context.click_type> == PHYSICAL:
+        - stop
+      - determine cancelled passively
+      - define tpmode false
+      - run TheHandScript def:<[tpmode]>
+
+thehandcooldown:
+  type: task
+  debug: false
+  speed: 0
+  script:
+  - flag <player> thehandcooldown duration:1s
+  - itemcooldown light_blue_concrete duration:1s
+
+TheHandScript:
+  type: task
+  debug: false
+  speed: 0
+  script:
+  - if <player.has_flag[thehandcooldown]>:
+    - playsound <player> sound:UI_BUTTON_CLICK
+    - stop
+  - define tpmode <[1]>
+  - run thehandcooldown
+  - flag <player> thehanduse duration:0.35s
+  - playsound <player.location> sound:BLOCK_NOTE_BLOCK_BASS p:1 v:3
+  - while <player.has_flag[thehanduse]>:
+    - if <player.eye_location.ray_trace[range=1.7;return=block]||null> == null:
+      - define locs:->:<player.eye_location.forward[1.7]>
+    - else:
+      - define locs:->:<player.eye_location.ray_trace[range=1.7;return=block]>
+    - playeffect at:<[locs].last> effect:REDSTONE special_data:1|blue quantity:15 offset:0.1,0.1,0.1
+    #- if <[tpmode]> == true:
+    #  - cast slow duration:1s power:100 <player>
+    #- else:
+    #  - cast slow duration:1s power:8 <player>
+    - wait 1t
+  - waituntil !<player.has_flag[thehanduse]>
+  - if <server.online_players_flagged[theworld].is_empty.not>:
+    - waituntil <server.online_players_flagged[theworld].is_empty>
+  - wait 1t
+  - if <[tpmode]> == yes:
+    - define sizehalf <[locs].size.div[2].round>
+    - define middleloc1 <[locs].get[<[sizehalf]>]>
+    - define middleloc2 <[middleloc1].with_pose[<player>]>
+    - define middleloc <[middleloc2].forward>
+    - define velocity <player.location.backward[2].face[<[middleloc]>].direction.vector.with_y[<player.location.face[<[middleloc]>].direction.vector.y.div[4]>].mul[2]>
+    - teleport <player> <[middleloc]>
+    - adjust <player> velocity:<[velocity]>
+  - foreach <[locs]> as:loc:
+    - repeat <[locs].size>:
+      - playeffect at:<[loc]> effect:REDSTONE special_data:1.2|blue quantity:9
+      - playsound <[loc]> sound:BLOCK_NOTE_BLOCK_BASS p:0 v:3
+      - playsound <[loc]> sound:BLOCK_NOTE_BLOCK_BASS p:0 v:3
+      - playsound <[loc]> sound:BLOCK_NOTE_BLOCK_BASS p:0 v:3
+      - playsound <[loc]> sound:BLOCK_NOTE_BLOCK_BASS p:0 v:3
+    - define entities <[loc].find_entities.within[1.5].exclude[<player>]>
+    - foreach <[entities]> as:entity:
+      - if <[entity].is_npc>:
+        - if <[entity].has_flag[user]>:
+          - define player <[entity].flag[user]>
+          - flag <[player]> standentity:!
+          - flag <[player]> standsummoned:false
+          - remove <[entity]>
+          - run thehandplayererasure def:<[player]>
+        - else:
+          - hurt <[entity]> 20000000 source:<player>
+          - wait 1t
+          - despawn <[entity]>
+      - if <[entity].is_player>:
+        - run thehandplayererasure def:<[entity]>
+      - if <[entity].is_player.not> && <[entity].is_npc.not>:
+        - adjust <[entity]> remove_effects
+        - hurt <[entity]> 20000000 source:<player>
+        - remove <[entity]>
+    - define blocks <[loc].find_blocks.within[1.5].filter[material.name.is[!=].to[air]]>
+    - foreach <[blocks]> as:block:
+      - if <[block].is_within[boxofbadaround]>:
+        - foreach next
+      - if <[block].is_within[superflatspawn]>:
+        - foreach next
+      - modifyblock <[block]> air source:<player>
+
+thehandplayererasure:
+  type: task
+  debug: false
+  speed: 0
+  definitions: player
+  script:
+  - if <[player].god_mode>:
+    - adjust <[player]> god_mode:false
+    - define god true
+  - else:
+    - define god false
+  - define gamemode <[player].gamemode>
+  - adjust <[player]> gamemode:survival
+  - adjust <[player]> remove_effects
+  - flag <[player]> ded duration:2s
+  - cast invisibility duration:2s <[player]>
+  - hurt <[player]> 20000000 source:<player>
+  - adjust <[player]> location:<[player].location.with_y[-800]>
+  - adjust <[player]> god_mode:<[god]>
+  - adjust <[player]> gamemode:<[gamemode]>

@@ -1,0 +1,20 @@
+chatwdym:
+  type: world
+  debug: false
+  events:
+    on player chats:
+    # chance, check toggle
+    - if <server.online_players.size> < 2:
+      - stop
+    - if <server.flag[wdym]||no> != true:
+      - stop
+    - if <util.random.int[1].to[32]> != 32:
+      - stop
+    # Determining it so that only soup can see chat for a troll and test rn lol
+    # update: player doesnt see change
+    - narrate <context.full_text> targets:<player>
+    #- if <server.match_player[soup]||off> != off:
+    #  - playsound <server.match_player[soup]> sound:block_note_block_bell pitch:1.2
+    #  - playsound <server.match_player[soup]> sound:entity_elder_guardian_curse pitch:1.2
+    - determine RECIPIENTS:<server.online_players.exclude[<player>]> passively
+    - determine "<list[right?|yea|exactly|no|not really|true|false|lmao|lol|lmfao|haha|hahaha|idc|what|why|wdym|idk|idc??|wtf|what the fuck|nah|dont care|?|lol|how|so what|and?|what do you mean|what?|why?|wdy m|wym|uuuh|what|yea?|ok???|i dont get it|what ???|no?|no??].random>"

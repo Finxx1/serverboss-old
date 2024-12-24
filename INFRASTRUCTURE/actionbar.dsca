@@ -1,0 +1,53 @@
+actionbar:
+  type: world
+  debug: false
+  events:
+    on tick:
+    - foreach <server.online_players>:
+      - define barshow <element[]>
+      - if <[value].flag[mantles]||0> > 0:
+        - if <[value].flag[mantles]||0> < 10:
+          - define barshow <[barshow]><element[✞].repeat[<[value].flag[mantles]>].color[#20FFFF]>
+        - else:
+          - define barshow <[barshow]><element[✞].color[#20FFFF]><element[ x<[value].flag[mantles]>].bold.italicize.color[#20FFFF]>
+      - if <[value].has_equipped[hermesflops]||0>:
+        - if <[value].has_flag[vptmode]>:
+          - define barshow <[barshow]><element[ | ]><element[<[value].flag[totalspeed].mul[16]> VPT].italicize.color[#80FF00]>
+        - else:
+          - define barshow <[barshow]><element[ | ]><element[<[value].flag[totalspeed]> BPT].italicize.color[#40FF40]>
+      - if <[value].has_flag[stylestatus]> && <[value].flag[stylestatus]||0> > 0:
+        - if <[value].flag[stylestatus]> > 1000:
+          - define stylestatusdisplay:<element[WACKO!!!].color[#FF20FF].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 900:
+          - define stylestatusdisplay:<element[SSSHITSTORM].color[#FF1010].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 800:
+          - define stylestatusdisplay:<element[SSADISTIC].color[#D80000].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 700:
+          - define stylestatusdisplay:<element[SUPREME].color[#C00000].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 600:
+          - define stylestatusdisplay:<element[ANARCHIC].color[#C06000].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 500:
+          - define stylestatusdisplay:<element[BRUTAL].color[#C0C000].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 400:
+          - define stylestatusdisplay:<element[CHAOTIC].color[#00C000].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 300:
+          - define stylestatusdisplay:<element[DESTRUCTIVE].color[#00C0C0].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 200:
+          - define stylestatusdisplay:<element[EFFICIENT].color[#0060C0].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 100:
+          - define stylestatusdisplay:<element[FANTASTIC].color[#0000DD].bold.italicize>
+        - else if <[value].flag[stylestatus]> > 0:
+          - define stylestatusdisplay:<element[GRINDING].color[#808080].bold.italicize>
+        - define barshow <[barshow]><element[ | ]><[stylestatusdisplay]>
+      - if <[value].has_flag[grapplingrn]>:
+        - define highup <[value].location.y.sub[<[value].location.with_pitch[90].ray_trace[range=25;return=precise;default=air;ignore=<[value]>;nonsolids=false].y>].round_down_to_precision[1]>
+        - if <[highup]> >= 20:
+          - define highup <element[20+].italicize.bold.color[#FF0000]>
+        - else:
+          - define highup <element[<[highup]>].italicize.bold.color[#FF8080]>
+        - define barshow <[barshow]><element[ | ]><[highup]>
+      - if <[value].has_flag[killmana]>:
+        - if <[value].flag[killmana]||0> > 0:
+          - define barshow <[barshow]><element[ | ]><element[<[value].flag[killmana]>].bold.color[#402020]>
+      - actionbar <[barshow]> targets:<[value]>
+      - flag <[value]> stylestatus:<[value].flag[stylestatus].sub[1].max[0]||0>

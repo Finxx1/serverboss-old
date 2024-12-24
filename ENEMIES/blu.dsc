@@ -1,0 +1,427 @@
+blu:
+  type: entity
+  entity_type: husk
+  mechanisms:
+    is_aware: false
+    equipment: <map[helmet=<item[air]>;chestplate=<item[air]>;leggings=<item[air]>;boots=<item[air]>]>
+    age: adult
+    max_health: 50
+    health: 50
+    speed: 0.195
+
+powerdrainmeter:
+  type: task
+  debug: false
+  definitions: blud
+  script:
+  - while <[blud].is_spawned>:
+    - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]>:
+      - flag <[value]> fnaispowerusage:<list[<location[91917,93,838590,serverboss]>|<location[191917,93,838584,serverboss]>|<location[191917,94,838590,serverboss]>|<location[191917,94,838584,serverboss]>|<location[191921,96,838587,serverboss]>].filter_tag[<[filter_value].switched>].size>
+    - wait 2t
+
+6amrampup:
+  type: task
+  debug: false
+  definitions: blud
+  script:
+  - announce "<element[12 AM].bold.color[#E0E0E0]>"
+  - flag <[blud]> am:0
+  - if !<[blud].is_spawned>:
+    - stop
+  - wait 1200t
+  - announce "<element[ 1 AM].bold.color[#E0E0E0]>"
+  - flag <[blud]> am:1
+  - if !<[blud].is_spawned>:
+    - stop
+  - wait 1700t
+  - announce "<element[ 2 AM].bold.color[#E0E0E0]>"
+  - flag <[blud]> am:2
+  - if !<[blud].is_spawned>:
+    - stop
+  - wait 1700t
+  - announce "<element[ 3 AM].bold.color[#E0E0E0]>"
+  - flag <[blud]> am:3
+  - if !<[blud].is_spawned>:
+    - stop
+  - wait 1400t
+  - announce "<element[ 4 AM].bold.color[#E0E0E0]>"
+  - flag <[blud]> am:4
+  - if !<[blud].is_spawned>:
+    - stop
+  - wait 2000t
+  - announce "<element[ 5 AM].bold.color[#E0E0E0]>"
+  - flag <[blud]> am:5
+  - if !<[blud].is_spawned>:
+    - stop
+  - wait 1700t
+  - announce "<element[ 6 AM].bold.color[#FFC040]>"
+  - if !<[blud].is_spawned>:
+    - stop
+  - remove <[blud]>
+  - announce <element[Blu left the game].color[#FFFF80]>
+  - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]>:
+    - flag <[value]> actionbarmode:!
+  - switch <location[191920,92,838587,serverboss]> state:on
+  - playsound sound:custom.tadahh at:<location[191920,92,838587,serverboss]> pitch:0 custom
+  - playsound sound:block_iron_door_close at:<location[191920,92,838587,serverboss]> volume:1 pitch:0
+  - playsound sound:block_iron_door_open at:<location[191920,92,838587,serverboss]> volume:1 pitch:0
+  - playsound sound:block_bell_use at:<location[191920,92,838587,serverboss]> volume:1 pitch:0
+    
+
+bluhandler:
+  type: world
+  debug: false
+  events:
+    on player enters fnaisdoorclose_*:
+    - switch <location[191920,92,838587,serverboss]> state:off
+    - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]>:
+      - teleport <[value]> <player>
+    on blu damaged:
+    - determine cancelled
+    on player right clicks lever:
+    - choose <context.location.block>:
+      - case l@191917,93,838590,serverboss:
+        - playsound sound:block_iron_trapdoor_open at:<context.location> volume:1 pitch:0
+        - if !<context.location.block.switched>:
+          - switch <location[191917,92,838589,serverboss]> state:off
+          - playsound sound:block_iron_door_close at:<context.location> volume:1 pitch:0
+        - else:
+          - switch <location[191917,92,838589,serverboss]> state:on
+      - case l@191917,93,838584,serverboss:
+        - playsound sound:block_iron_trapdoor_open at:<context.location> volume:1 pitch:0
+        - if !<context.location.block.switched>:
+          - switch <location[191917,92,838585,serverboss]> state:off
+          - playsound sound:block_iron_door_close at:<context.location> volume:1 pitch:0
+        - else:
+          - switch <location[191917,92,838585,serverboss]> state:on
+
+      - case l@191917,94,838590,serverboss:
+        - playsound sound:block_iron_trapdoor_open at:<context.location> volume:1 pitch:0
+        - if !<context.location.block.switched>:
+          - switch <location[191919,93,838591,serverboss]> state:off
+          - playsound sound:block_iron_door_close at:<context.location> volume:1 pitch:0
+        - else:
+          - switch <location[191919,93,838591,serverboss]> state:on
+      - case l@191917,94,838584,serverboss:
+        - playsound sound:block_iron_trapdoor_open at:<context.location> volume:1 pitch:0
+        - if !<context.location.block.switched>:
+          - switch <location[191919,93,838583,serverboss]> state:off
+          - playsound sound:block_iron_door_close at:<context.location> volume:1 pitch:0
+        - else:
+          - switch <location[191919,93,838583,serverboss]> state:on
+      
+      - case l@191921,96,838587,serverboss:
+        - playsound sound:block_iron_trapdoor_open at:<context.location> volume:1 pitch:0
+        - if !<context.location.block.switched>:
+          - switch <location[191922,93,838587,serverboss]> state:off
+          - playsound sound:block_iron_door_close at:<context.location> volume:1 pitch:0
+        - else:
+          - switch <location[191922,93,838587,serverboss]> state:on
+    on blu spawns:
+    - announce <element[Blu joined the game].color[#FFFF80]>
+    - wait 1t
+    - run powerdrainmeter def:<context.entity>
+    - run 6amrampup def:<context.entity>
+    - while <context.entity.is_spawned>:
+      - wait <element[5].sub[<list[<location[191917,93,838590,serverboss]>|<location[191917,93,838584,serverboss]>|<location[191917,94,838590,serverboss]>|<location[191917,94,838584,serverboss]>|<location[191921,96,838587,serverboss]>].filter_tag[<[filter_value].switched>].size>].mul[27]>t
+      - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]>:
+        - if <[value].flag[fnaispower]> == 1:
+          - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]> as:val2:
+            - teleport <[val2]> <location[0,64,0,DEATHPLANE]>
+            - flag <[val2]> actionbarmode:!
+          - wait 5t
+          - playsound at:<location[0,64,0,DEATHPLANE]> sound:custom.aaaa2 pitch:0.987 volume:87 custom
+          - stop
+        - else:
+          - flag <[value]> fnaispower:<[value].flag[fnaispower].sub[1]>
+    after blu spawns:
+    - teleport <context.entity> node_a4w5n0
+    - flag <context.entity> blunode:n0
+    - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]>:
+      - flag <[value]> actionbarmode:power
+      - flag <[value]> fnaispower:100
+    - playsound at:<context.entity.eye_location> sound:ambient_cave pitch:0 volume:2
+    - libsdisguise player target:<context.entity> name:lovesessionseboy hide_name
+    - define blub <context.entity>
+    - while <context.entity.is_spawned>:
+      - choose <context.entity.flag[am]>:
+        - case 0:
+          - wait <list[35|140|80|200].random>t
+        - case 1:
+          - wait <list[30|120|70|170].random>t
+        - case 2:
+          - wait <list[30|110|60|140].random>t
+        - case 3:
+          - wait <list[30|110|60].random>t
+        - case 4:
+          - wait <list[35|40|70|60].random>t
+        - case 5:
+          - wait <list[30|35|40].random>t
+      - if !<list[n4_a|n3_b|n5|n6_b_v|n6_a_v].contains_any[<context.entity.flag[blunode]>]>:
+        - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]>:
+          - cast <[value]> blindness duration:30t amplifier:1 no_icon hide_particles no_ambient
+        - cast <context.entity> invisibility duration:15t amplifier:1 no_icon hide_particles no_ambient
+      - wait 5t
+      - choose <context.entity.flag[blunode]>:
+        - case n0:
+          - teleport <[blub]> node_a4w5n1
+          - flag <[blub]> blunode:n1
+        - case n1:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n2
+              - flag <[blub]> blunode:n2
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n1_a
+              - flag <[blub]> blunode:n1_a
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n1_b
+              - flag <[blub]> blunode:n1_b
+        - case n2:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n1
+              - flag <[blub]> blunode:n1
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3
+              - flag <[blub]> blunode:n3
+        - case n2_a:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3_a
+              - flag <[blub]> blunode:n3_a
+            - repeat 1:
+              - teleport <[blub]> node_kitchenhallway
+              - flag <[blub]> blunode:kitchenhallway
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n1_a
+              - flag <[blub]> blunode:n1_a
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3
+              - flag <[blub]> blunode:n3
+        - case n3:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n4
+              - flag <[blub]> blunode:n4
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3_a
+              - flag <[blub]> blunode:n3_a
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n2_b
+              - flag <[blub]> blunode:n2_b
+        - case n4:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3
+              - flag <[blub]> blunode:n3
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3_a
+              - flag <[blub]> blunode:n3_a
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n2_b
+              - flag <[blub]> blunode:n2_b
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n6_b_v
+              - flag <[blub]> blunode:n6_b_v
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n6_a_v
+              - flag <[blub]> blunode:n6_a_v
+        - case n1_a:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n1
+              - flag <[blub]> blunode:n1
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3_a
+              - flag <[blub]> blunode:n2_a
+        - case n1_b:
+          - teleport <[blub]> node_a4w5n2_b
+          - flag <[blub]> blunode:n2_b
+        - case n2_b:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n1_b
+              - flag <[blub]> blunode:n1_b
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3
+              - flag <[blub]> blunode:n3
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n4
+              - flag <[blub]> blunode:n4
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3_b
+              - flag <[blub]> blunode:n3_b
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n4
+              - flag <[blub]> blunode:n4
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n5_b
+              - flag <[blub]> blunode:n5_b
+            - repeat 1:
+              - teleport <[blub]> node_partsandservicestare
+              - flag <[blub]> blunode:partsandservicestare
+        - case partsandservicestare:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_partsandservicehide
+              - flag <[blub]> blunode:partsandservicehide
+            - repeat 1:
+              - teleport <[blub]> node_n5_b
+              - flag <[blub]> blunode:n5_b
+        - case partsandservicehide:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_partsandservicestare
+              - flag <[blub]> blunode:partsandservicestare
+            - repeat 1:
+              - teleport <[blub]> node_n5_b
+              - flag <[blub]> blunode:n5_b
+        - case n3_b:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n5_b
+              - flag <[blub]> blunode:n5_b
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3_a
+              - flag <[blub]> blunode:n3_a
+        - case kitchenhallway:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3_a
+              - flag <[blub]> blunode:n3_a
+            - repeat 1:
+              - teleport <[blub]> node_kitchenhallway2
+              - flag <[blub]> blunode:kitchenhallway2
+        - case kitchenhide:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_kitchenstare
+              - flag <[blub]> blunode:kitchenstare
+            - repeat 1:
+              - teleport <[blub]> node_a425n5_a
+              - flag <[blub]> blunode:n5_a
+        - case kitchenstare:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_kitchenstare
+              - flag <[blub]> blunode:kitchenstare
+            - repeat 1:
+              - teleport <[blub]> node_a425n5_a
+              - flag <[blub]> blunode:n5_a
+        - case kitchenhallway2:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_kitchenstare
+              - flag <[blub]> blunode:kitchenstare
+            - repeat 1:
+              - teleport <[blub]> node_kitchenhide
+              - flag <[blub]> blunode:kitchenhide
+            - repeat 1:
+              - teleport <[blub]> node_kitchenhallway
+              - flag <[blub]> blunode:kitchenhallway
+        - case n3_a:
+          - random:
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n4_a
+              - flag <[blub]> blunode:n4_a
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n5_a
+              - flag <[blub]> blunode:n5_a
+            - repeat 1:
+              - teleport <[blub]> node_kitchenhallway
+              - flag <[blub]> blunode:kitchenhallway
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n2_a
+              - flag <[blub]> blunode:n2_a
+            - repeat 1:
+              - teleport <[blub]> node_a4w5n3
+              - flag <[blub]> blunode:n3
+        - case n5_b:
+          - if [node_a4w5n5]
+          - teleport <[blub]> node_a4w5n5
+          - flag <[blub]> blunode:n5
+        - case n5_a:
+          - teleport <[blub]> node_a4w5n5
+          - flag <[blub]> blunode:n5
+# death cases
+        - case n4_a:
+          - if !<location[node_a4w5dooreast].switched>:
+            - repeat 3:
+              - playsound at:<[blub].eye_location> sound:entity_zombie_attack_wooden_door pitch:0 volume:2
+              - wait 15t
+            - wait 20t
+            - if <util.random_chance[75]>:
+              - teleport <[blub]> node_a4w5n1
+              - flag <[blub]> blunode:n1
+          - else:
+            - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]>:
+              - teleport <[value]> <location[0,64,0,DEATHPLANE]>
+              - flag <[value]> actionbarmode:!
+            - wait 3t
+            - playsound at:<location[0,65,0,DEATHPLANE]> sound:custom.aaaa2 pitch:0.987 volume:87 custom
+        - case n3_b:  
+          - if !<location[node_a4w5doorwest].switched>:
+            - repeat 3:
+              - playsound at:<[blub].eye_location> sound:entity_zombie_attack_wooden_door pitch:0 volume:2
+              - wait 15t
+            - wait 20t
+            - if <util.random_chance[75]>:
+              - teleport <[blub]> node_a4w5n1
+              - flag <[blub]> blunode:n1
+          - else:
+            - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]>:
+              - teleport <[value]> <location[0,64,0,DEATHPLANE]>
+              - flag <[value]> actionbarmode:!
+            - wait 3t
+            - playsound at:<location[0,65,0,DEATHPLANE]> sound:custom.aaaa2 pitch:0.987 volume:87 custom
+        - case n6_a_v:  
+          - if !<location[node_a4w5venteast].switched>:
+            - repeat 3:
+              - playsound at:<[blub].eye_location> sound:entity_zombie_attack_wooden_door pitch:0 volume:2
+              - wait 15t
+            - wait 20t
+            - if <util.random_chance[75]>:
+              - teleport <[blub]> node_a4w5n1
+              - flag <[blub]> blunode:n1
+          - else:
+            - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]>:
+              - teleport <[value]> <location[0,64,0,DEATHPLANE]>
+              - flag <[value]> actionbarmode:!
+            - wait 3t
+            - playsound at:<location[0,65,0,DEATHPLANE]> sound:custom.aaaa2 pitch:0.987 volume:87 custom
+        - case n6_b_v:  
+          - if !<location[node_a4w5ventwest].switched>:
+            - repeat 3:
+              - playsound at:<[blub].eye_location> sound:entity_zombie_attack_wooden_door pitch:0 volume:2
+              - wait 15t
+            - wait 20t
+            - if <util.random_chance[75]>:
+              - teleport <[blub]> node_a4w5n1
+              - flag <[blub]> blunode:n1
+          - else:
+            - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]>:
+              - teleport <[value]> <location[0,64,0,DEATHPLANE]>
+              - flag <[value]> actionbarmode:!
+            - wait 3t
+            - playsound at:<location[0,65,0,DEATHPLANE]> sound:custom.aaaa2 pitch:0.987 volume:87 custom
+        - case n5:
+          - if !<location[node_a4w5doornorth].switched>:
+            - repeat 3:
+              - playsound at:<[blub].eye_location> sound:entity_zombie_attack_wooden_door pitch:0 volume:2
+              - wait 15t
+            - wait 20t
+            - if <util.random_chance[75]>:
+              - teleport <[blub]> node_a4w5n1
+              - flag <[blub]> blunode:n1
+          - else:
+            - foreach <server.list_players.filter_tag[<[filter_value].gamemode.is[==].to[ADVENTURE]>]>:
+              - teleport <[value]> <location[0,64,0,DEATHPLANE]>
+              - flag <[value]> actionbarmode:!
+            - wait 3t
+            - playsound at:<location[0,65,0,DEATHPLANE]> sound:custom.aaaa2 pitch:0.987 volume:87 custom
+      - playsound at:<context.entity.eye_location> sound:ambient_cave pitch:0 volume:2
+      - repeat <list[9|13|5].random>:
+        - wait 2t
+        - playsound at:<context.entity.eye_location> sound:block_stone_step pitch:1 volume:3
+        - playsound at:<context.entity.eye_location> sound:block_stone_step pitch:0 volume:3

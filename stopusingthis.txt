@@ -1,0 +1,17 @@
+
+madeinheaven2:
+  debug: false
+  type: task
+  definitions: pucci
+  script:
+  - foreach <server.online_players>:
+    - title targets:<[value]> "title:<&f><&l>MADE" fade_in:0t stay:5s
+    - wait 15t
+    - title targets:<[value]> "title:<&f><&l>MADE IN" fade_in:0t stay:5s
+    - wait 7t
+    - title targets:<[value]> "title:<&f><&l>MADE IN HEAVEN" fade_in:0t fade_out:5t stay:0.6s
+    - wait 3t
+    - title targets:<[value]> "title:<&f><&l>MADE IN HEAVEN" "subtitle:<&e><&o>ACCELERATE TIME!!!" fade_in:0t fade_out:2t stay:1.5s
+  - repeat 800 as:timeacc:
+    - time <duration[<[pucci].world.time.div[20].add[<[timeacc]>]>]> <[pucci].world>
+    - wait 1t
